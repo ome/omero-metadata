@@ -102,7 +102,7 @@ setup(
     description="Metadata plugin for use in the OMERO CLI.",
     long_description=read('README.rst'),
     classifiers=[
-          'Development Status :: 5 - Production/Stable',
+          'Development Status :: 4 - Beta',
           'Environment :: Plugins',
           'Intended Audience :: Developers',
           'Intended Audience :: End Users/Desktop',
