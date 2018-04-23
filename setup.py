@@ -99,7 +99,7 @@ setup(
     packages=['', 'omero.plugins'],
     package_dir={"": "src"},
     name='omero-cli-metadata',
-    description="Plugin for use in the OMERO CLI.",
+    description="Metadata plugin for use in the OMERO CLI.",
     long_description=read('README.rst'),
     classifiers=[
           'Development Status :: 5 - Production/Stable',
@@ -118,9 +118,9 @@ setup(
     author_email='ome-devel@lists.openmicroscopy.org.uk',
     license='GPL-2.0+',
     url='%s' % url,
-    zip_safe=False,
+    zip_safe=True,
     download_url='%s/v%s.tar.gz' % (url, version),
     keywords=['OMERO.CLI', 'plugin'],
     cmdclass={'test': PyTest},
-    tests_require=['pytest', 'restview', 'mox'],
+    tests_require=['pytest'],
 )
