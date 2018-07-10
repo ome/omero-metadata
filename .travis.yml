@@ -1,0 +1,15 @@
+language: python
+
+virtualenv:
+  system_site_packages: true
+
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - git clone  git://github.com/openmicroscopy/omero-test-infra .omero
+
+script:
+  - .omero/cli-docker
