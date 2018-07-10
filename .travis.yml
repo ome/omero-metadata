@@ -5,6 +5,8 @@ virtualenv:
 
 sudo: required
 
+env: PLUGIN=metadata
+
 services:
   - docker
 
