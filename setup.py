@@ -91,14 +91,14 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.1.0.dev1'
-url = "https://github.com/ome/omero-cli-metadata/"
+version = '0.2.0.dev1'
+url = "https://github.com/ome/omero-metadata/"
 
 setup(
     version=version,
     packages=['', 'omero.plugins'],
     package_dir={"": "src"},
-    name='omero-cli-metadata',
+    name='omero-metadata',
     description="Metadata plugin for use in the OMERO CLI.",
     long_description=read('README.rst'),
     classifiers=[
