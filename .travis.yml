@@ -11,7 +11,7 @@ services:
   - docker
 
 before_install:
-  - git clone  git://github.com/openmicroscopy/omero-test-infra .omero
+  - git clone git://github.com/sbesson/omero-test-infra -b PLUGIN_envvar .omero
 
 script:
   - .omero/cli-docker
