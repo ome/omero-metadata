@@ -27,6 +27,11 @@ Install the command-line tool using `pip <https://pip.pypa.io/en/stable/>`_:
 
     $ pip install -U omero-metadata
 
+Note the original version of this code is still available as deprecated code in
+version 5.4.x of OMERO.py. When using the CLI metadata plugin, the
+`OMERO_DEV_PLUGINS` environment variable should not be set to prevent
+conflicts when importing the Python module.
+
 License
 -------
 
