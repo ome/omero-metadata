@@ -1,11 +1,11 @@
-.. image:: https://travis-ci.org/ome/omero-cli-metadata.svg?branch=master
-    :target: https://travis-ci.org/ome/omero-cli-metadata
+.. image:: https://travis-ci.org/ome/omero-metadata.svg?branch=master
+    :target: https://travis-ci.org/ome/omero-metadata
 
-.. image:: https://badge.fury.io/py/omero-cli-metadata.svg
-    :target: https://badge.fury.io/py/omero-cli-metadata
+.. image:: https://badge.fury.io/py/omero-metadata.svg
+    :target: https://badge.fury.io/py/omero-metadata
 
-omero-cli-metadata
-==================
+OMERO metadata plugin
+=====================
 
 Plugin for use in the OMERO CLI.
 
@@ -25,7 +25,7 @@ Install the command-line tool using `pip <https://pip.pypa.io/en/stable/>`_:
 
 ::
 
-    $ pip install -U omero-cli-metadata
+    $ pip install -U omero-metadata
 
 License
 -------
