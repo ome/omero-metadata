@@ -1,0 +1,19 @@
+CHANGES
+=======
+
+0.2.0
+-----
+
+This release contains the metadata code matching the state of OMERO 5.4.7.
+
+* Add metadata code filtered from the develop branch of
+  openmicroscopy/openmicroscopy
+* Remove OMERO_DEV_PLUGINS variable
+* Add infrastructure for releasing the module to PyPI
+* Activate Travis CI for running the integration tests using omero-test-infra
+
+0.1.0
+-----
+
+* Filter metadata code from the metadata53 branch of
+  openmicroscopy/openmicroscopy
