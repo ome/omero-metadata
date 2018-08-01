@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.2.1
+-----
+
+This is the first release deployed to PyPI
+
 0.2.0
 -----
 
