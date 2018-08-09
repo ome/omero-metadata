@@ -76,13 +76,13 @@ def coord2offset(coord):
 
     TODO: This should go into a utils file somewhere
     """
-    ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     m = re.match('([A-Z]+)([0-9]+)$', coord.upper())
     assert m
     ra, ca = m.groups()
     r = 0
     for a in ra:
-        r = r * 26 + ALPHA.find(a) + 1
+        r = r * 26 + alpha.find(a) + 1
     c = int(ca)
     return r - 1, c - 1
 
@@ -92,57 +92,57 @@ class Fixture(object):
     def init(self, test):
         self.test = test
 
-    def setName(self, obj, name):
+    def set_name(self, obj, name):
         q = self.test.client.sf.getQueryService()
         up = self.test.client.sf.getUpdateService()
         obj = q.get(obj.__class__.__name__, obj.id.val)
         obj.setName(rstring(name))
         return up.saveAndReturnObject(obj)
 
-    def createCsv(
+    def create_csv(
         self,
-        colNames="Well,Well Type,Concentration",
-        rowData=("A1,Control,0", "A2,Treatment,10")
+        col_names="Well,Well Type,Concentration",
+        row_data=("A1,Control,0", "A2,Treatment,10")
     ):
 
-        csvFileName = create_path("test", ".csv")
-        csvFile = open(csvFileName, 'w')
+        csv_filename = create_path("test", ".csv")
+        csv_file = open(csv_filename, 'w')
         try:
-            csvFile.write(colNames)
-            csvFile.write("\n")
-            csvFile.write("\n".join(rowData))
+            csv_file.write(col_names)
+            csv_file.write("\n")
+            csv_file.write("\n".join(row_data))
         finally:
-            csvFile.close()
-        return str(csvFileName)
+            csv_file.close()
+        return str(csv_filename)
 
-    def createProject(self, name, datasets=("D001", "D002"),
-                      images=("A1", "A2")):
+    def create_project(self, name, datasets=("D001", "D002"),
+                       images=("A1", "A2")):
         prj = ProjectI()
         prj.setName(rstring(name))
         for x in datasets:
-            ds = self.createDataset(names=images)
-            ds = self.setName(ds, x)
+            ds = self.create_dataset(names=images)
+            ds = self.set_name(ds, x)
             prj.linkDataset(ds.proxy())
         return self.test.client.sf.getUpdateService().saveAndReturnObject(prj)
 
-    def createDataset(self, names=("A1", "A2")):
+    def create_dataset(self, names=("A1", "A2")):
         ds = self.test.make_dataset()
         imgs = self.test.import_fake_file(
             images_count=len(names))
         for i, name in enumerate(names):
             # Name must match exactly. No ".fake"
             img = imgs[i]
-            img = self.setName(img, name)
+            img = self.set_name(img, name)
             self.test.link(ds, img)
         return ds.proxy()
 
-    def createScreen(self, rowCount, colCount):
-        plate1 = self.test.import_plates(plate_rows=rowCount,
-                                         plate_cols=colCount)[0]
-        plate2 = self.test.import_plates(plate_rows=rowCount,
-                                         plate_cols=colCount)[0]
-        plate1 = self.setName(plate1, "P001")
-        plate2 = self.setName(plate2, "P002")
+    def create_screen(self, row_count, col_count):
+        plate1 = self.test.import_plates(plate_rows=row_count,
+                                         plate_cols=col_count)[0]
+        plate2 = self.test.import_plates(plate_rows=row_count,
+                                         plate_cols=col_count)[0]
+        plate1 = self.set_name(plate1, "P001")
+        plate2 = self.set_name(plate2, "P002")
         screen = ScreenI()
         screen.name = rstring("Screen")
         screen.linkPlate(plate1.proxy())
@@ -150,9 +150,9 @@ class Fixture(object):
         return self.test.client.sf.getUpdateService().\
             saveAndReturnObject(screen)
 
-    def createPlate(self, rowCount, colCount):
-        plates = self.test.import_plates(plate_rows=rowCount,
-                                         plate_cols=colCount)
+    def create_plate(self, row_count, col_count):
+        plates = self.test.import_plates(plate_rows=row_count,
+                                         plate_cols=col_count)
         return plates[0]
 
     def get_csv(self):
@@ -166,7 +166,7 @@ class Fixture(object):
         return [NSBULKANNOTATIONS]
 
     def assert_rows(self, rows):
-        assert rows == self.rowCount * self.colCount
+        assert rows == self.row_count * self.col_count
 
     def assert_child_annotations(self, oas):
         for ma, wid, wr, wc in oas:
@@ -195,24 +195,24 @@ class Screen2Plates(Fixture):
 
     def __init__(self):
         self.count = 6
-        self.annCount = 4
-        self.rowCount = 1
-        self.colCount = 2
-        self.csv = self.createCsv(
-            colNames="Plate,Well,Well Type,Concentration",
-            rowData=("P001,A1,Control,0", "P001,A2,Treatment,10",
-                     "P002,A1,Control,0", "P002,A2,Treatment,10"))
+        self.ann_count = 4
+        self.row_count = 1
+        self.col_count = 2
+        self.csv = self.create_csv(
+            col_names="Plate,Well,Well Type,Concentration",
+            row_data=("P001,A1,Control,0", "P001,A2,Treatment,10",
+                      "P002,A1,Control,0", "P002,A2,Treatment,10"))
         self.screen = None
 
     def assert_rows(self, rows):
         """
         Double the number of rows due to 2 plates.
         """
-        assert rows == 2 * self.rowCount * self.colCount
+        assert rows == 2 * self.row_count * self.col_count
 
     def get_target(self):
         if not self.screen:
-            self.screen = self.createScreen(self.rowCount, self.colCount)
+            self.screen = self.create_screen(self.row_count, self.col_count)
         return self.screen
 
     def get_annotations(self):
@@ -240,15 +240,15 @@ class Plate2Wells(Fixture):
 
     def __init__(self):
         self.count = 4
-        self.annCount = 2
-        self.rowCount = 1
-        self.colCount = 2
-        self.csv = self.createCsv()
+        self.ann_count = 2
+        self.row_count = 1
+        self.col_count = 2
+        self.csv = self.create_csv()
         self.plate = None
 
     def get_target(self):
         if not self.plate:
-            self.plate = self.createPlate(self.rowCount, self.colCount)
+            self.plate = self.create_plate(self.row_count, self.col_count)
         return self.plate
 
     def get_annotations(self):
@@ -279,9 +279,9 @@ class Plate2WellsNs(Plate2Wells):
 
     def __init__(self):
         self.count = 8
-        self.annCount = 8 * 2  # Two namespaces
-        self.rowCount = 2
-        self.colCount = 4
+        self.ann_count = 8 * 2  # Two namespaces
+        self.row_count = 2
+        self.col_count = 4
         d = os.path.dirname(__file__)
         self.csv = os.path.join(d, 'bulk_to_map_annotation_context_ns.csv')
         self.plate = None
@@ -562,13 +562,13 @@ class Plate2WellsNs2UnavailableHeader(Plate2WellsNs2):
 
     def __init__(self):
         self.count = 4
-        self.annCount = 4*2
-        self.rowCount = 2
-        self.colCount = 2
-        self.csv = self.createCsv(
-            colNames="Well,Gene,Gene Names",
-            rowData=("a1,gene-a1,a1-name", "a2,gene-a2,a2-name",
-                     "b1,gene-a1,a1-name", "b2,gene-a2,a2-name")
+        self.ann_count = 4*2
+        self.row_count = 2
+        self.col_count = 2
+        self.csv = self.create_csv(
+            col_names="Well,Gene,Gene Names",
+            row_data=("a1,gene-a1,a1-name", "a2,gene-a2,a2-name",
+                      "b1,gene-a1,a1-name", "b2,gene-a2,a2-name")
         )
         self.plate = None
 
@@ -625,12 +625,12 @@ class Plate2WellsNs2Fail(Plate2WellsNs2):
 
     def __init__(self):
         self.count = 4
-        self.annCount = 2
-        self.rowCount = 1
-        self.colCount = 2
-        self.csv = self.createCsv(
-            colNames="Well,Gene,Gene Names",
-            rowData=("a1,,ABC", "A2,,ABC")
+        self.ann_count = 2
+        self.row_count = 1
+        self.col_count = 2
+        self.csv = self.create_csv(
+            col_names="Well,Gene,Gene Names",
+            row_data=("a1,,ABC", "A2,,ABC")
         )
         self.plate = None
 
@@ -646,9 +646,9 @@ class Dataset2Images(Fixture):
 
     def __init__(self):
         self.count = 4
-        self.annCount = 2
-        self.csv = self.createCsv(
-            colNames="Image Name,Type,Concentration",
+        self.ann_count = 2
+        self.csv = self.create_csv(
+            col_names="Image Name,Type,Concentration",
         )
         self.dataset = None
         self.images = None
@@ -660,7 +660,7 @@ class Dataset2Images(Fixture):
 
     def get_target(self):
         if not self.dataset:
-            self.dataset = self.createDataset(self.names)
+            self.dataset = self.create_dataset(self.names)
             self.images = self.get_dataset_images()
         return self.dataset
 
@@ -719,7 +719,7 @@ class Dataset2Images1Missing(Dataset2Images):
 
     def __init__(self):
         super(Dataset2Images1Missing, self).__init__()
-        self.annCount = 1
+        self.ann_count = 1
 
     def get_target(self):
         """
@@ -738,19 +738,19 @@ class Dataset101Images(Dataset2Images):
 
     def __init__(self):
         self.count = 4
-        self.annCount = 102
+        self.ann_count = 102
         self.names = []
-        rowData = []
+        row_data = []
         for x in range(0, 101, 2):
             name = "A%s" % (x+1)
             self.names.append(name)
-            rowData.append("%s,Control,0" % name)
+            row_data.append("%s,Control,0" % name)
             name = "A%s" % (x+2)
             self.names.append(name)
-            rowData.append("A%s,Treatment,10" % (x+2))
-        self.csv = self.createCsv(
-            colNames="Image Name,Type,Concentration",
-            rowData=rowData,
+            row_data.append("A%s,Treatment,10" % (x+2))
+        self.csv = self.create_csv(
+            col_names="Image Name,Type,Concentration",
+            row_data=row_data,
         )
         self.dataset = None
         self.images = None
@@ -761,48 +761,48 @@ class Dataset101Images(Dataset2Images):
 
 class GZIP(Dataset2Images):
 
-    def createCsv(self, *args, **kwargs):
-        csvFileName = super(GZIP, self).createCsv(*args, **kwargs)
-        gzipFileName = "%s.gz" % csvFileName
+    def create_csv(self, *args, **kwargs):
+        csv_filename = super(GZIP, self).create_csv(*args, **kwargs)
+        gzip_filename = "%s.gz" % csv_filename
         # failing on python 2.6
         # the following workaround can be reverted once py26 is dropped
         # with open(csvFileName, 'rb') as f_in:
         #      with gzip.open(gzipFileName, 'wb') as f_out:
         #          shutil.copyfileobj(f_in, f_out)
-        f_in = open(csvFileName, 'rb')
+        f_in = open(csv_filename, 'rb')
         try:
             try:
                 try:
-                    f_out = gzip.open(gzipFileName, 'wb')
-                except:
-                    f_out = gzip(gzipFileName, 'wb')
+                    f_out = gzip.open(gzip_filename, 'wb')
+                except Exception:
+                    f_out = gzip(gzip_filename, 'wb')
                 shutil.copyfileobj(f_in, f_out)
             finally:
                 f_out.close()
         finally:
             f_in.close()
 
-        return gzipFileName
+        return gzip_filename
 
 
 class Project2Datasets(Fixture):
 
     def __init__(self):
         self.count = 5
-        self.annCount = 4
-        self.csv = self.createCsv(
-            colNames="Dataset Name,Image Name,Type,Concentration",
-            rowData=("D001,A1,Control,0", "D001,A2,Treatment,10",
-                     "D002,A1,Control,0", "D002,A2,Treatment,10"))
+        self.ann_count = 4
+        self.csv = self.create_csv(
+            col_names="Dataset Name,Image Name,Type,Concentration",
+            row_data=("D001,A1,Control,0", "D001,A2,Treatment,10",
+                      "D002,A1,Control,0", "D002,A2,Treatment,10"))
         self.project = None
 
     def assert_rows(self, rows):
-        # Hard-coded in createCsv's arguments
+        # Hard-coded in create_csv's arguments
         assert rows == 4
 
     def get_target(self):
         if not self.project:
-            self.project = self.createProject("P123")
+            self.project = self.create_project("P123")
             self.images = self.get_project_images()
         return self.project
 
@@ -916,9 +916,9 @@ class TestPopulateMetadataHelper(ITest):
         anns = fixture.get_annotations()
         # Only expect a single annotation which is a 'bulk annotation'
         assert len(anns) == 1
-        tableFileAnn = anns[0]
-        assert unwrap(tableFileAnn.getNs()) == NSBULKANNOTATIONS
-        fileid = tableFileAnn.file.id.val
+        table_file_ann = anns[0]
+        assert unwrap(table_file_ann.getNs()) == NSBULKANNOTATIONS
+        fileid = table_file_ann.file.id.val
 
         # Open table to check contents
         r = self.client.sf.sharedResources()
@@ -930,14 +930,14 @@ class TestPopulateMetadataHelper(ITest):
         rows = t.getNumberOfRows()
         fixture.assert_rows(rows)
         for hit in range(rows):
-            rowValues = [col.values[0] for col in t.read(range(len(cols)),
-                                                         hit, hit+1).columns]
-            assert len(rowValues) == fixture.count
+            row_values = [col.values[0] for col in t.read(range(len(cols)),
+                                                          hit, hit+1).columns]
+            assert len(row_values) == fixture.count
             # Unsure where the lower-casing is happening
-            if "A1" in rowValues or "a1" in rowValues:
-                assert "Control" in rowValues
-            elif "A2" in rowValues or "a2" in rowValues:
-                assert "Treatment" in rowValues
+            if "A1" in row_values or "a1" in row_values:
+                assert "Control" in row_values
+            elif "A2" in row_values or "a2" in row_values:
+                assert "Treatment" in row_values
 
     def _test_bulk_to_map_annotation_context(self, fixture, batch_size):
         # self._testPopulateMetadataPlate()
@@ -959,19 +959,19 @@ class TestPopulateMetadataHelper(ITest):
         else:
             ctx.write_to_omero(batch_size=batch_size)
         oas = fixture.get_child_annotations()
-        assert len(oas) == fixture.annCount
+        assert len(oas) == fixture.ann_count
         fixture.assert_child_annotations(oas)
 
     def _test_delete_map_annotation_context(self, fixture, batch_size):
         # self._test_bulk_to_map_annotation_context()
-        assert len(fixture.get_child_annotations()) == fixture.annCount
+        assert len(fixture.get_child_annotations()) == fixture.ann_count
 
         cfg = fixture.get_cfg()
 
         target = fixture.get_target()
         ctx = DeleteMapAnnotationContext(self.client, target, cfg=cfg)
         ctx.parse()
-        assert len(fixture.get_child_annotations()) == fixture.annCount
+        assert len(fixture.get_child_annotations()) == fixture.ann_count
 
         if batch_size is None:
             ctx.write_to_omero()
@@ -987,9 +987,11 @@ class TestPopulateMetadataHelperPerMethod(TestPopulateMetadataHelper):
     # Some tests in this file check the counts of annotations in a fixed
     # namespace, and therefore require a new client for each test method
 
+    @classmethod
     def setup_class(cls):
         pass
 
+    @classmethod
     def teardown_class(cls):
         pass
 
@@ -1022,7 +1024,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
 
     @mark.parametrize("fixture", METADATA_FIXTURES, ids=METADATA_IDS)
     @mark.parametrize("batch_size", (None, 1, 10))
-    def testPopulateMetadata(self, fixture, batch_size):
+    def test_populate_metadata(self, fixture, batch_size):
         """
         We should really test each of the parsing contexts in separate tests
         but in practice each one uses data created by the others, so for
@@ -1035,7 +1037,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         self._test_delete_map_annotation_context(fixture, batch_size)
 
     @mark.parametrize("fixture", METADATA_NS_FIXTURES, ids=METADATA_NS_IDS)
-    def testPopulateMetadataNsAnns(self, fixture):
+    def test_populate_metadata_ns_anns(self, fixture):
         """
         Test complicated annotations (multiple ns/groups) on a single OMERO
         data type, as opposed to testPopulateMetadata which tests simple
@@ -1048,14 +1050,14 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         rows = t.getNumberOfRows()
         fixture.assert_rows(rows)
         data = [c.values for c in t.read(range(len(cols)), 0, rows).columns]
-        rowValues = zip(*data)
-        assert len(rowValues) == fixture.count
-        fixture.assert_row_values(rowValues)
+        row_values = zip(*data)
+        assert len(row_values) == fixture.count
+        fixture.assert_row_values(row_values)
 
         self._test_bulk_to_map_annotation_context(fixture, 2)
         self._test_delete_map_annotation_context(fixture, 2)
 
-    def testPopulateMetadataNsAnnsUnavailableHeader(self):
+    def test_populate_metadata_ns_anns_unavailable_header(self):
         """
         Similar to testPopulateMetadataNsAnns but use two plates and check
         MapAnnotations aren't duplicated
@@ -1065,7 +1067,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         self._test_parsing_context(fixture_empty, 2)
         self._test_bulk_to_map_annotation_context(fixture_empty, 2)
 
-    def testPopulateMetadataNsAnnsFail(self):
+    def test_populate_metadata_ns_anns_fail(self):
         """
         Similar to testPopulateMetadataNsAnns but use two plates and check
         MapAnnotations aren't duplicated
@@ -1089,8 +1091,8 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         if ns:
             options['ns'] = ns
 
-        ann_count = fixture1.annCount
-        assert fixture2.annCount == ann_count
+        ann_count = fixture1.ann_count
+        assert fixture2.ann_count == ann_count
         assert len(fixture1.get_child_annotations()) == ann_count
         assert len(fixture2.get_child_annotations()) == 0
 
@@ -1137,8 +1139,8 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
             self, fixture1, fixture2, ns):
 
         # Sanity checks in case the test code or fixtures are modified
-        assert fixture1.annCount == 16
-        assert fixture2.annCount == 16
+        assert fixture1.ann_count == 16
+        assert fixture2.ann_count == 16
 
         options = {}
         if ns:
@@ -1197,7 +1199,7 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
             assert len(fixture2.get_all_map_annotations()) == 0
 
     @mark.parametrize("ns", [None, NSBULKANNOTATIONS, MAPR_NS_GENE])
-    def testPopulateMetadataNsAnnsDedup(self, ns):
+    def test_populate_metadata_ns_anns_dedup(self, ns):
         """
         Similar to testPopulateMetadataNsAnns but use two plates, check
         MapAnnotations aren't duplicated, and filter by namespace
@@ -1213,7 +1215,7 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         self._test_bulk_to_map_annotation_dedup(fixture1, fixture2, ns)
 
     @mark.parametrize("ns", [None, NSBULKANNOTATIONS, MAPR_NS_GENE])
-    def testPopulateMetadataNsAnnsDedupDelete(self, ns):
+    def test_populate_metadata_ns_anns_dedup_delete(self, ns):
         """
         Similar to testPopulateMetadataNsAnns but use two plates, check
         MapAnnotations aren't duplicated, and delete by namespace
@@ -1379,7 +1381,7 @@ class MockPlateAnalysisCtx(AbstractPlateAnalysisCtx):
                 self.measurements[len(self.measurements)] = \
                     original_file
 
-    def is_this_type(klass, original_files):
+    def is_this_type(cls, original_files):
         for original_file in original_files:
             name = unwrap(original_file.name)
             if name.endswith(".csv"):
@@ -1404,26 +1406,26 @@ class ROICSV(Fixture):
 
     def __init__(self):
         self.count = 1
-        self.annCount = 2
-        self.csvName = self.createCsv(
-            colNames="Well,Field,X,Y,Type",
-            rowData=("A1,0,15,15,Test",))
+        self.ann_count = 2
+        self.csv_name = self.create_csv(
+            col_names="Well,Field,X,Y,Type",
+            row_data=("A1,0,15,15,Test",))
 
-        self.rowCount = 1
-        self.colCount = 1
+        self.row_count = 1
+        self.col_count = 1
         self.plate = None
 
     def get_target(self):
         if not self.plate:
-            self.plate = self.createPlate(
-                self.rowCount, self.colCount)
+            self.plate = self.create_plate(
+                self.row_count, self.col_count)
         return self.plate
 
 
 @pythonminver
 class TestPopulateRois(ITest):
 
-    def testPopulateRoisPlate(self):
+    def test_populate_rois_plate(self):
         """
             Create a small csv file, use populate_roi.py to parse and
             attach to Plate. Then query to check table has expected content.
@@ -1435,7 +1437,7 @@ class TestPopulateRois(ITest):
 
         # As opposed to the ParsingContext, here we are expected
         # to link the file ourselves
-        ofile = self.client.upload(fixture.csvName).proxy()
+        ofile = self.client.upload(fixture.csv_name).proxy()
         ann = FileAnnotationI()
         ann.file = ofile
         link = PlateAnnotationLinkI()
