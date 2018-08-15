@@ -87,6 +87,7 @@ Examples:
 Report bugs to ome-devel@lists.openmicroscopy.org.uk""" % (error, cmd, cmd)
     sys.exit(2)
 
+
 # Global thread pool for use by workers
 thread_pool = None
 
@@ -1655,10 +1656,10 @@ class DeleteMapAnnotationContext(_QueryContext):
                                        loops, ms)
 
     def _write_to_omero_batch(self, to_delete, loops=10, ms=500):
-        delCmd = omero.cmd.Delete2(targetObjects=to_delete)
+        del_cmd = omero.cmd.Delete2(targetObjects=to_delete)
         try:
             callback = self.client.submit(
-                delCmd, loops=loops, ms=ms, failontimeout=True)
+                del_cmd, loops=loops, ms=ms, failontimeout=True)
         except CmdError, ce:
             log.error("Failed to delete: %s" % to_delete)
             raise Exception(ce.err)

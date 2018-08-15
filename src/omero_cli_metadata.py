@@ -12,11 +12,10 @@ import logging
 import mimetypes
 import os
 import re
-import sys
 
 import omero
 from omero.cli import BaseControl
-from omero.cli import CLI
+
 from omero.cli import ProxyStringType
 from omero.constants import namespaces
 from omero.gateway import BlitzGateway
@@ -424,7 +423,7 @@ class MetadataControl(BaseControl):
         try:
             table.initialize([LongColumn('ID', '', [])])
             initialized = True
-        except:
+        except Exception:
             pass
         finally:
             table.close()
@@ -432,7 +431,7 @@ class MetadataControl(BaseControl):
         try:
             orig_file = table.getOriginalFile()
             conn.deleteObject(orig_file)
-        except:
+        except Exception:
             # Anything else to do here?
             pass
 
@@ -622,7 +621,6 @@ class MetadataControl(BaseControl):
             if args.z:
                 pixel.setPhysicalSizeZ(omero.model.LengthI(args.z, unit))
 
-        groupId = pixels[0].getDetails().getGroup().getId().getValue()
-        ctx = {'omero.group': str(groupId)}
+        group_id = pixels[0].getDetails().getGroup().getId().getValue()
+        ctx = {'omero.group': str(group_id)}
         conn.getUpdateService().saveArray(pixels, ctx)
-

@@ -8,6 +8,8 @@
 
 """
 
+import sys
+from omero.cli import CLI
 from omero_cli_metadata import MetadataControl, HELP
 try:
     register("metadata", MetadataControl, HELP)

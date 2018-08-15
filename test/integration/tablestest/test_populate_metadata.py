@@ -35,22 +35,22 @@ from omero.constants.namespaces import NSBULKANNOTATIONS
 
 class TestPopulateMetadata(ITest):
 
-    def createCsv(self, csvFileName):
+    def create_csv(self, csv_filename):
 
-        colNames = "Well,Well Type,Concentration"
-        rowData = ["A1,Control,0", "A2,Treatment,10"]
-        csvFile = open(csvFileName, 'w')
+        col_names = "Well,Well Type,Concentration"
+        row_data = ["A1,Control,0", "A2,Treatment,10"]
+        csv_file = open(csv_filename, 'w')
         try:
-            csvFile.write(colNames)
-            csvFile.write("\n")
-            csvFile.write("\n".join(rowData))
+            csv_file.write(col_names)
+            csv_file.write("\n")
+            csv_file.write("\n".join(row_data))
         finally:
-            csvFile.close()
+            csv_file.close()
 
-    def createPlate(self, rowCount, colCount):
+    def create_plate(self, row_count, col_count):
         uuid = self.ctx.sessionUuid
 
-        def createWell(row, column):
+        def create_well(row, column):
             well = WellI()
             well.row = rint(row)
             well.column = rint(column)
@@ -62,28 +62,28 @@ class TestPopulateMetadata(ITest):
 
         plate = PlateI()
         plate.name = rstring("TestPopulateMetadata%s" % uuid)
-        for row in range(rowCount):
-            for col in range(colCount):
-                well = createWell(row, col)
+        for row in range(row_count):
+            for col in range(col_count):
+                well = create_well(row, col)
                 plate.addWell(well)
         return self.client.sf.getUpdateService().saveAndReturnObject(plate)
 
-    def testPopulateMetadataPlate(self):
+    def test_populate_metadata_plate(self):
         """
             Create a small csv file, use populate_metadata.py to parse and
             attach to Plate. Then query to check table has expected content.
         """
 
-        csvName = "testCreate.csv"
-        self.createCsv(csvName)
-        rowCount = 1
-        colCount = 2
-        plate = self.createPlate(rowCount, colCount)
-        ctx = ParsingContext(self.client, plate, csvName)
+        csv_name = "testCreate.csv"
+        self.create_csv(csv_name)
+        row_count = 1
+        col_count = 2
+        plate = self.create_plate(row_count, col_count)
+        ctx = ParsingContext(self.client, plate, csv_name)
         ctx.parse()
         ctx.write_to_omero()
         # Delete local temp file
-        os.remove(csvName)
+        os.remove(csv_name)
 
         # Get file annotations
         query = """select p from Plate p
@@ -95,23 +95,23 @@ class TestPopulateMetadata(ITest):
         anns = plate.linkedAnnotationList()
         # Only expect a single annotation which is a 'bulk annotation'
         assert len(anns) == 1
-        tableFileAnn = anns[0]
-        assert unwrap(tableFileAnn.getNs()) == NSBULKANNOTATIONS
-        fileid = tableFileAnn.file.id.val
+        table_file_ann = anns[0]
+        assert unwrap(table_file_ann.getNs()) == NSBULKANNOTATIONS
+        fileid = table_file_ann.file.id.val
 
         # Open table to check contents
         r = self.client.sf.sharedResources()
         t = r.openTable(OriginalFileI(fileid), None)
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
-        assert rows == rowCount * colCount
+        assert rows == row_count * col_count
         for hit in range(rows):
-            rowValues = [col.values[0] for col in t.read(range(len(cols)),
-                                                         hit, hit+1).columns]
-            assert len(rowValues) == 4
-            if "a1" in rowValues:
-                assert "Control" in rowValues
-            elif "a2" in rowValues:
-                assert "Treatment" in rowValues
+            row_values = [col.values[0] for col in t.read(range(len(cols)),
+                                                          hit, hit+1).columns]
+            assert len(row_values) == 4
+            if "a1" in row_values:
+                assert "Control" in row_values
+            elif "a2" in row_values:
+                assert "Treatment" in row_values
             else:
                 assert False, "Row does not contain 'a1' or 'a2'"
