@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.2.2
+-----
+
+* Update the source code to be flake8 compliant
+* Activate the metadata and table integration tests in Travis
+
 0.2.1
 -----
 
