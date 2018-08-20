@@ -858,7 +858,8 @@ class ParsingUtilFactory(object):
 class ParsingContext(object):
     """Generic parsing context for CSV files."""
 
-    def __init__(self, client, target_object, parsing_util_factory, file=None, fileid=None,
+    def __init__(self, client, target_object,
+                 parsing_util_factory, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None):
         '''
@@ -983,10 +984,10 @@ class ParsingContext(object):
             data.close()
 
     def preprocess_data(self, reader):
-        #Get count of data columns - e.g. NOT Well Name
+        # Get count of data columns - e.g. NOT Well Name
         column_count = 0
         for column in self.columns:
-            if column.name not in ADDED_COLUMN_NAMES :
+            if column.name not in ADDED_COLUMN_NAMES:
                 column_count += 1
         for i, row in enumerate(reader):
             row = [(self.columns[i], value) for i, value in enumerate(row)]
@@ -1001,7 +1002,8 @@ class ParsingContext(object):
                     log.debug("Value's class: %s" % value.__class__)
                     if value.__class__ is str:
                         column.size = max(column.size, len(value))
-                    #The following are needed for getting post process column sizes
+                    # The following are needed for
+                    # getting post process column sizes
                     if column.__class__ is WellColumn:
                         column.values.append(value)
                     elif column.__class__ is ImageColumn:
@@ -1970,7 +1972,9 @@ if __name__ == "__main__":
         log.debug('Creating pool of %d threads' % thread_count)
         thread_pool = ThreadPool(thread_count)
         value_resolver = ValueResolver(client, target_object)
-        parsing_util_factory = ParsingUtilFactory(client, target_object, value_resolver)
+        parsing_util_factory = ParsingUtilFactory(client,
+                                                  target_object,
+                                                  value_resolver)
         ctx = context_class(
             client,
             target_object,

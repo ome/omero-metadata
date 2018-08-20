@@ -84,11 +84,13 @@ class TestPopulateMetadata(ITest):
         col_count = 2
         plate = self.create_plate(row_count, col_count)
         value_resolver = ValueResolver(self.client, plate)
-        parsing_util_factory = ParsingUtilFactory(self.client, plate, value_resolver)
+        parsing_util_factory = ParsingUtilFactory(self.client,
+                                                  plate,
+                                                  value_resolver)
         ctx = ParsingContext(self.client,
                              plate,
                              parsing_util_factory=parsing_util_factory,
-                             file=csv)
+                             file=csv_name)
         ctx.parse()
         # Delete local temp file
         os.remove(csv_name)
