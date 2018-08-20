@@ -99,6 +99,13 @@ WELL_NAME_COLUMN = 'Well Name'
 DATASET_NAME_COLUMN = 'Dataset Name'
 IMAGE_NAME_COLUMN = 'Image Name'
 
+ADDED_COLUMN_NAMES = [PLATE_NAME_COLUMN,
+                      WELL_NAME_COLUMN,
+                      DATASET_NAME_COLUMN,
+                      IMAGE_NAME_COLUMN,
+                      'image']
+
+
 COLUMN_TYPES = {
     'plate': PlateColumn, 'well': WellColumn, 'image': ImageColumn,
     'dataset': DatasetColumn, 'roi': RoiColumn,
@@ -106,6 +113,9 @@ COLUMN_TYPES = {
 }
 
 REGEX_HEADER_SPECIFIER = r'# header '
+
+DEFAULT_TABLE_NAME = 'bulk_annotations'
+MAX_COLUMN_COUNT = 512
 
 
 class Skip(object):
@@ -821,10 +831,34 @@ class ProjectWrapper(PDIWrapper):
         log.debug('Completed parsing project: %s' % self.target_object.id.val)
 
 
+class ParsingUtilFactory(object):
+
+    def get_filter_for_plate(self, column_index, target_name):
+        return lambda row: True if row[column_index] == target_name else False
+
+    def get_generic_filter(self):
+        return lambda row: True
+
+    def __init__(self, client, target_object, value_resolver):
+        self.target_object = target_object
+        self.target_class = target_object.__class__
+        self.value_resolver = value_resolver
+
+    def get_value_resolver(self):
+        return self.value_resolver
+
+    def get_filter_function(self, column_index=-1):
+        if PlateI is self.target_class and column_index != -1:
+            return self.get_filter_for_plate(
+                column_index, unwrap(self.target_object.getName()))
+        else:
+            return self.get_generic_filter()
+
+
 class ParsingContext(object):
     """Generic parsing context for CSV files."""
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    def __init__(self, client, target_object, parsing_util_factory, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None):
         '''
@@ -844,7 +878,8 @@ class ParsingContext(object):
         self.target_object = target_object
         self.file = file
         self.column_types = column_types
-        self.value_resolver = ValueResolver(self.client, self.target_object)
+        self.parsing_util_factory = parsing_util_factory
+        self.value_resolver = self.parsing_util_factory.get_value_resolver()
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
@@ -868,87 +903,193 @@ class ParsingContext(object):
                 widths.append(None)
         return widths
 
-    def parse_from_handle(self, data):
-        rows = list(csv.reader(data, delimiter=','))
-        first_row_is_types = HeaderResolver.is_row_column_types(rows[0])
+    def preprocess_from_handle(self, data):
+        reader = csv.reader(data, delimiter=',')
+        first_row = reader.next()
+        header_row = first_row
+        first_row_is_types = HeaderResolver.is_row_column_types(first_row)
         header_index = 0
-        rows_index = 1
         if first_row_is_types:
             header_index = 1
-            rows_index = 2
-        log.debug('Header: %r' % rows[header_index])
-        for h in rows[0]:
+            header_row = reader.next()
+        log.debug('Header: %r' % header_row)
+        for h in first_row:
             if not h:
                 raise Exception('Empty column header in CSV: %s'
-                                % rows[header_index])
+                                % first_row[header_index])
         if self.column_types is None and first_row_is_types:
-            self.column_types = HeaderResolver.get_column_types(rows[0])
+            self.column_types = HeaderResolver.get_column_types(first_row)
         log.debug('Column types: %r' % self.column_types)
         self.header_resolver = HeaderResolver(
-            self.target_object, rows[header_index],
+            self.target_object, header_row,
             column_types=self.column_types)
         self.columns = self.header_resolver.create_columns()
         log.debug('Columns: %r' % self.columns)
+        if len(self.columns) > MAX_COLUMN_COUNT:
+            log.warn("Column count exceeds max column count")
 
-        valuerows = rows[rows_index:]
-        log.debug('Got %d rows', len(valuerows))
-        valuerows = self.value_resolver.subselect(
-            valuerows, rows[header_index])
-        self.populate(valuerows)
-        self.post_process()
+        self.preprocess_data(reader)
+
+    def parse_from_handle_stream(self, data):
+        reader = csv.reader(data, delimiter=',')
+        first_row = reader.next()
+        header_row = first_row
+        first_row_is_types = HeaderResolver.is_row_column_types(first_row)
+        if first_row_is_types:
+            header_row = reader.next()
+
+        plate_header_index = -1
+        for i, name in enumerate(header_row):
+            if name.lower() == 'plate':
+                plate_header_index = i
+                break
+
+        self.filter_function = self.parsing_util_factory.get_filter_function(
+            plate_header_index)
+
+        table = self.create_table()
+        self.populate_from_reader(reader, self.filter_function, table, 1000)
+        self.create_file_annotation(table)
+
         log.debug('Column widths: %r' % self.get_column_widths())
         log.debug('Columns: %r' % [
             (o.name, len(o.values)) for o in self.columns])
 
+    def create_table(self):
+        sf = self.client.getSession()
+        group = str(self.value_resolver.target_group)
+        sr = sf.sharedResources()
+        table = sr.newTable(1, DEFAULT_TABLE_NAME, {'omero.group': group})
+        if table is None:
+            raise MetadataError(
+                "Unable to create table: %s" % DEFAULT_TABLE_NAME)
+        original_file = table.getOriginalFile()
+        log.info('Created new table OriginalFile:%d' % original_file.id.val)
+        table.initialize(self.columns)
+        return table
+
     def parse(self):
         if self.file.endswith(".gz"):
+            data_for_preprocessing = gzip.open(self.file, "rb")
             data = gzip.open(self.file, "rb")
         else:
+            data_for_preprocessing = open(self.file, 'U')
             data = open(self.file, 'U')
 
         try:
-            return self.parse_from_handle(data)
+            self.preprocess_from_handle(data_for_preprocessing)
+            return self.parse_from_handle_stream(data)
         finally:
             data.close()
 
-    def populate(self, rows):
-        nrows = len(rows)
-        for (r, row) in enumerate(rows):
-            values = list()
+    def preprocess_data(self, reader):
+        #Get count of data columns - e.g. NOT Well Name
+        column_count = 0
+        for column in self.columns:
+            if column.name not in ADDED_COLUMN_NAMES :
+                column_count += 1
+        for i, row in enumerate(reader):
             row = [(self.columns[i], value) for i, value in enumerate(row)]
             for column, original_value in row:
-                log.debug('Row %d/%d Original value %s, %s',
-                          r + 1, nrows, original_value, column.name)
+                log.debug('Original value %s, %s',
+                          original_value, column.name)
                 value = self.value_resolver.resolve(
                     column, original_value, row)
                 if value.__class__ is Skip:
                     break
-                values.append(value)
                 try:
                     log.debug("Value's class: %s" % value.__class__)
                     if value.__class__ is str:
                         column.size = max(column.size, len(value))
+                    #The following are needed for getting post process column sizes
+                    if column.__class__ is WellColumn:
+                        column.values.append(value)
+                    elif column.__class__ is ImageColumn:
+                        column.values.append(value)
+                    elif column.name.lower() == "plate":
+                        column.values.append(value)
                 except TypeError:
                     log.error('Original value "%s" now "%s" of bad type!' % (
                         original_value, value))
                     raise
-            if value.__class__ is not Skip:
-                values.reverse()
-                for column in self.columns:
-                    if not values:
-                        if isinstance(column, ImageColumn) or \
-                           column.name in (PLATE_NAME_COLUMN,
-                                           WELL_NAME_COLUMN,
-                                           IMAGE_NAME_COLUMN):
-                            # Then assume that the values will be calculated
-                            # later based on another column.
-                            continue
-                        else:
-                            msg = 'Column %s has no values.' % column.name
-                            log.error(msg)
-                            raise IndexError(msg)
+            self.post_process()
+            for column in self.columns:
+                column.values = []
+
+    def populate_row(self, row):
+        values = list()
+        row = [(self.columns[i], value) for i, value in enumerate(row)]
+        for column, original_value in row:
+            log.debug('Original value %s, %s',
+                      original_value, column.name)
+            value = self.value_resolver.resolve(
+                column, original_value, row)
+            if value.__class__ is Skip:
+                break
+            values.append(value)
+        if value.__class__ is not Skip:
+            values.reverse()
+            for column in self.columns:
+                if not values:
+                    if isinstance(column, ImageColumn) or \
+                       column.name in (PLATE_NAME_COLUMN,
+                                       WELL_NAME_COLUMN,
+                                       IMAGE_NAME_COLUMN):
+                        # Then assume that the values will be calculated
+                        # later based on another column.
+                        continue
                     else:
-                        column.values.append(values.pop())
+                        msg = 'Column %s has no values.' % column.name
+                        log.error(msg)
+                        raise IndexError(msg)
+                else:
+                    column.values.append(values.pop())
+
+    def populate_from_reader(self,
+                             reader,
+                             filter_function,
+                             table,
+                             batch_size=1000):
+        row_count = 0
+        for (r, row) in enumerate(reader):
+            log.debug('Row %d', r)
+            if filter_function(row):
+                self.populate_row(row)
+                row_count = row_count + 1
+                if row_count >= batch_size:
+                    self.post_process()
+                    table.addData(self.columns)
+                    for column in self.columns:
+                        column.values = []
+                    row_count = 0
+        if row_count != 0:
+            log.debug("DATA TO ADD")
+            log.debug(self.columns)
+            self.post_process()
+            table.addData(self.columns)
+        table.close()
+
+    def create_file_annotation(self, table):
+        sf = self.client.getSession()
+        group = str(self.value_resolver.target_group)
+        update_service = sf.getUpdateService()
+
+        original_file = table.getOriginalFile()
+        file_annotation = FileAnnotationI()
+        file_annotation.ns = rstring(
+            'openmicroscopy.org/omero/bulk_annotations')
+        file_annotation.description = rstring(DEFAULT_TABLE_NAME)
+        file_annotation.file = OriginalFileI(original_file.id.val, False)
+        link = self.create_annotation_link()
+        link.parent = self.target_object
+        link.child = file_annotation
+        update_service.saveObject(link, {'omero.group': group})
+
+    def populate(self, rows):
+        nrows = len(rows)
+        for (r, row) in enumerate(rows):
+            log.debug('Row %d/%d', r + 1, nrows)
+            self.populate_row(row)
 
     def post_process(self):
         target_class = self.target_object.__class__
@@ -983,7 +1124,6 @@ class ParsingContext(object):
                     resolve_image_names = True
                     log.debug("Resolving Image Ids")
 
-        log.debug("Column by name:%r" % columns_by_name)
         if well_name_column is None and plate_name_column is None \
                 and image_name_column is None:
             log.info('Nothing to do during post processing.')
@@ -1081,52 +1221,6 @@ class ParsingContext(object):
                 plate_name_column.values.append(v)
             else:
                 log.info('Missing plate name column, skipping.')
-
-    def write_to_omero(self, batch_size=1000, loops=10, ms=500):
-        sf = self.client.getSession()
-        group = str(self.value_resolver.target_group)
-        sr = sf.sharedResources()
-        update_service = sf.getUpdateService()
-        name = 'bulk_annotations'
-        table = sr.newTable(1, name, {'omero.group': group})
-        if table is None:
-            raise MetadataError(
-                "Unable to create table: %s" % name)
-        original_file = table.getOriginalFile()
-        log.info('Created new table OriginalFile:%d' % original_file.id.val)
-
-        values = []
-        length = -1
-        for x in self.columns:
-            if length < 0:
-                length = len(x.values)
-            else:
-                assert length == len(x.values)
-            values.append(x.values)
-            x.values = None
-
-        table.initialize(self.columns)
-        log.info('Table initialized with %d columns.' % (len(self.columns)))
-
-        i = 0
-        for pos in xrange(0, length, batch_size):
-            i += 1
-            for idx, x in enumerate(values):
-                self.columns[idx].values = x[pos:pos+batch_size]
-            table.addData(self.columns)
-            count = min(batch_size, length - pos)
-            log.info('Added %s rows of column data (batch %s)', count, i)
-
-        table.close()
-        file_annotation = FileAnnotationI()
-        file_annotation.ns = rstring(
-            'openmicroscopy.org/omero/bulk_annotations')
-        file_annotation.description = rstring(name)
-        file_annotation.file = OriginalFileI(original_file.id.val, False)
-        link = self.create_annotation_link()
-        link.parent = self.target_object
-        link.child = file_annotation
-        update_service.saveObject(link, {'omero.group': group})
 
 
 class _QueryContext(object):
@@ -1453,6 +1547,7 @@ class BulkToMapAnnotationContext(_QueryContext):
             ignore_missing_primary_key = False
 
         nrows = table.getNumberOfRows()
+        print("Number of rows: %d" % (nrows))
         data = table.readCoordinates(range(nrows))
 
         # Don't create annotations on higher-level objects
@@ -1874,11 +1969,16 @@ if __name__ == "__main__":
 
         log.debug('Creating pool of %d threads' % thread_count)
         thread_pool = ThreadPool(thread_count)
+        value_resolver = ValueResolver(client, target_object)
+        parsing_util_factory = ParsingUtilFactory(client, target_object, value_resolver)
         ctx = context_class(
-            client, target_object, file, column_types=column_types)
+            client,
+            target_object,
+            parsing_util_factory=parsing_util_factory,
+            file=file,
+            column_types=column_types)
+
         ctx.parse()
-        if not info:
-            ctx.write_to_omero()
     finally:
         pass
         client.closeSession()

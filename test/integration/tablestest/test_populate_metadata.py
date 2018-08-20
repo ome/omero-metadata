@@ -24,12 +24,16 @@
 
 """
 
+import csv
+
 from omero.testlib import ITest
 import os
 
 from omero.model import PlateI, WellI, WellSampleI, OriginalFileI
 from omero.rtypes import rint, rstring, unwrap
-from omero.util.populate_metadata import ParsingContext
+from omero.util.populate_metadata import (ParsingContext,
+                                          ValueResolver,
+                                          ParsingUtilFactory)
 from omero.constants.namespaces import NSBULKANNOTATIONS
 
 
@@ -79,9 +83,13 @@ class TestPopulateMetadata(ITest):
         row_count = 1
         col_count = 2
         plate = self.create_plate(row_count, col_count)
-        ctx = ParsingContext(self.client, plate, csv_name)
+        value_resolver = ValueResolver(self.client, plate)
+        parsing_util_factory = ParsingUtilFactory(self.client, plate, value_resolver)
+        ctx = ParsingContext(self.client,
+                             plate,
+                             parsing_util_factory=parsing_util_factory,
+                             file=csv)
         ctx.parse()
-        ctx.write_to_omero()
         # Delete local temp file
         os.remove(csv_name)
 
