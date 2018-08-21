@@ -24,8 +24,6 @@
 
 """
 
-import csv
-
 from omero.testlib import ITest
 import os
 

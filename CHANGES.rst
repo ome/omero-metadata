@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.3.0
+-----
+
+* Added bulk annotations for Projects and Datasets
+* Changed csv parsing to proceed line-by-line (streaming)
+
+
 0.2.2
 -----
 

@@ -1921,7 +1921,6 @@ if __name__ == "__main__":
     password = None
     hostname = 'localhost'
     port = 4064  # SSL
-    info = False
     session_key = None
     logging_level = logging.INFO
     thread_count = 1
@@ -1936,8 +1935,6 @@ if __name__ == "__main__":
             hostname = argument
         if option == "-p":
             port = int(argument)
-        if option == "-i":
-            info = True
         if option == "-k":
             session_key = argument
         if option == "-d":
