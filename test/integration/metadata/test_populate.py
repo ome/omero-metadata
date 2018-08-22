@@ -44,7 +44,7 @@ from omero.model import RoiI, PointI, ProjectI, ScreenI
 from omero.rtypes import rdouble, rlist, rstring, unwrap
 from omero.sys import ParametersI
 
-from omero.util.populate_metadata import (
+from populate_metadata import (
     get_config,
     ParsingContext,
     ValueResolver,
