@@ -907,13 +907,8 @@ class TestPopulateMetadataHelper(ITest):
         self.delete(child_anns)
 
         csv = fixture.get_csv()
-        value_resolver = ValueResolver(self.client, target)
-        parsing_util_factory = ParsingUtilFactory(self.client,
-                                                  target,
-                                                  value_resolver)
         ctx = ParsingContext(self.client,
                              target,
-                             parsing_util_factory=parsing_util_factory,
                              file=csv)
         ctx.parse()
 

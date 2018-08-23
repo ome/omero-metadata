@@ -858,8 +858,7 @@ class ParsingUtilFactory(object):
 class ParsingContext(object):
     """Generic parsing context for CSV files."""
 
-    def __init__(self, client, target_object,
-                 parsing_util_factory, file=None, fileid=None,
+    def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None):
         '''
@@ -879,8 +878,10 @@ class ParsingContext(object):
         self.target_object = target_object
         self.file = file
         self.column_types = column_types
-        self.parsing_util_factory = parsing_util_factory
-        self.value_resolver = self.parsing_util_factory.get_value_resolver()
+        self.value_resolver = ValueResolver(client, target_object)
+        self.parsing_util_factory = ParsingUtilFactory(client,
+                                                  target_object,
+                                                  self.value_resolver)
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
@@ -1968,14 +1969,9 @@ if __name__ == "__main__":
 
         log.debug('Creating pool of %d threads' % thread_count)
         thread_pool = ThreadPool(thread_count)
-        value_resolver = ValueResolver(client, target_object)
-        parsing_util_factory = ParsingUtilFactory(client,
-                                                  target_object,
-                                                  value_resolver)
         ctx = context_class(
             client,
             target_object,
-            parsing_util_factory=parsing_util_factory,
             file=file,
             column_types=column_types)
 
