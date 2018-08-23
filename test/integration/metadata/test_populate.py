@@ -47,8 +47,6 @@ from omero.sys import ParametersI
 from populate_metadata import (
     get_config,
     ParsingContext,
-    ValueResolver,
-    ParsingUtilFactory,
     BulkToMapAnnotationContext,
     DeleteMapAnnotationContext,
 )

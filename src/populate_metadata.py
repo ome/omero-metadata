@@ -880,8 +880,8 @@ class ParsingContext(object):
         self.column_types = column_types
         self.value_resolver = ValueResolver(client, target_object)
         self.parsing_util_factory = ParsingUtilFactory(client,
-                                                  target_object,
-                                                  self.value_resolver)
+                                                       target_object,
+                                                       self.value_resolver)
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
