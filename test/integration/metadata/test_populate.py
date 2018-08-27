@@ -705,6 +705,7 @@ class Dataset2Images(Fixture):
             img = mv['Image Name']
             con = mv['Concentration']
             typ = mv['Type']
+            assert 'Image' in mv
             assert img[0] in ("A", "a")
             which = long(img[1:])
             if which % 2 == 1:
