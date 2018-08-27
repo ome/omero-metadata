@@ -476,20 +476,20 @@ class MetadataControl(BaseControl):
                 cfgid = cfgann.getFile().getId()
                 md.linkAnnotation(cfgann)
 
+        loops = 0
+        ms = 0
+        if not args.dry_run:
+            wait = args.wait
+            if wait:
+                ms = 5000
+                loops = int((wait * 1000) / ms) + 1
+
         # Note some contexts only support a subset of these args
         ctx = context_class(client, args.obj, file=args.file, fileid=fileid,
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
-                            options=localcfg)
+                            options=localcfg, batch_size=args.batch,
+                            loops=loops, ms=ms)
         ctx.parse()
-        if not args.dry_run:
-            wait = args.wait
-            if not wait:
-                loops = 0
-                ms = 0
-            else:
-                ms = 5000
-                loops = int((wait * 1000) / ms) + 1
-            ctx.write_to_omero(batch_size=args.batch, loops=loops, ms=ms)
 
     def rois(self, args):
         "Manage ROIs"

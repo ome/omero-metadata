@@ -860,7 +860,7 @@ class ParsingContext(object):
 
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
-                 options=None):
+                 options=None, batch_size=1000, loops=10, ms=500):
         '''
         This lines should be handled outside of the constructor:
 
@@ -1339,7 +1339,8 @@ class BulkToMapAnnotationContext(_QueryContext):
     """
 
     def __init__(self, client, target_object, file=None, fileid=None,
-                 cfg=None, cfgid=None, attach=False, options=None):
+                 cfg=None, cfgid=None, attach=False, options=None,
+                 batch_size=1000, loops=10, ms=10, dry_run=False):
         """
         :param client: OMERO client object
         :param target_object: The object to be annotated
@@ -1375,6 +1376,10 @@ class BulkToMapAnnotationContext(_QueryContext):
         self.options = {}
         if options:
             self.options = options
+        if batch_size:
+            self.batch_size = batch_size
+        else:
+            self.batch_size = 1000
 
     def _init_namespace_primarykeys(self):
         try:
@@ -1524,9 +1529,10 @@ class BulkToMapAnnotationContext(_QueryContext):
         assert table
 
         try:
-            return self.populate(table)
+            self.populate(table)
         finally:
             table.close()
+        self.write_to_omero()
 
     def _get_additional_targets(self, target):
         iids = []
@@ -1550,7 +1556,6 @@ class BulkToMapAnnotationContext(_QueryContext):
             ignore_missing_primary_key = False
 
         nrows = table.getNumberOfRows()
-        print("Number of rows: %d" % (nrows))
         data = table.readCoordinates(range(nrows))
 
         # Don't create annotations on higher-level objects
@@ -1613,7 +1618,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     def _write_log(self, text):
         log.debug("BulkToMapAnnotation:write_to_omero - %s" % text)
 
-    def write_to_omero(self, batch_size=1000, loops=10, ms=500):
+    def write_to_omero(self):
         i = 0
         cur = 0
         links = []
@@ -1626,22 +1631,25 @@ class BulkToMapAnnotationContext(_QueryContext):
         for cma in cmas:
             batch, ma = self._create_map_annotation_links(cma)
             self._write_log("found batch of size %s" % len(batch))
-            if len(batch) < batch_size:
+            if len(batch) < self.batch_size:
                 links.append(batch)
                 cur += len(batch)
-                if cur > 10 * batch_size:
+                if cur > 10 * self.batch_size:
                     self._write_log("running batches. accumulated: %s" % cur)
-                    i += self._write_links(links, batch_size, i)
+                    i += self._write_links(links, self.batch_size, i)
                     links = []
                     cur = 0
             else:
                 self._write_log("running grouped_batch")
-                sz = self._save_annotation_and_links(batch, ma, batch_size)
+                print("_save_annotation_and_links with batch size %d" %
+                      (self.batch_size))
+                sz = self._save_annotation_and_links(batch, ma,
+                                                     self.batch_size)
                 i += sz
                 log.info('Created/linked %d MapAnnotations (total %s)',
                          sz, i)
         # Handle any remaining writes
-        i += self._write_links(links, batch_size, i)
+        i += self._write_links(links, self.batch_size, i)
 
     def _write_links(self, links, batch_size, i):
         count = 0
@@ -1661,7 +1669,9 @@ class DeleteMapAnnotationContext(_QueryContext):
     """
 
     def __init__(self, client, target_object, file=None, fileid=None,
-                 cfg=None, cfgid=None, attach=False, options=None):
+                 cfg=None, cfgid=None, attach=False, options=None,
+                 batch_size=1000, loops=10, ms=500, dry_run=False):
+
         """
         :param client: OMERO client object
         :param target_object: The object to be processed
@@ -1685,9 +1695,16 @@ class DeleteMapAnnotationContext(_QueryContext):
         self.options = {}
         if options:
             self.options = options
+        if batch_size:
+            self.batch_size = batch_size
+        else:
+            self.batch_size = 1000
+        self.loops = loops
+        self.ms = ms
 
     def parse(self):
-        return self.populate()
+        self.populate()
+        self.write_to_omero()
 
     def _get_annotations_for_deletion(
             self, objtype, objids, anntype, nss, getlink=False):
@@ -1850,14 +1867,14 @@ class DeleteMapAnnotationContext(_QueryContext):
             log.debug("FileAnnotations in %s: %s",
                       [NSBULKANNOTATIONSCONFIG], self.fileannids)
 
-    def write_to_omero(self, batch_size=1000, loops=10, ms=500):
+    def write_to_omero(self):
         for objtype, maids in self.mapannids.iteritems():
-            for batch in self._batch(maids, sz=batch_size):
+            for batch in self._batch(maids, sz=self.batch_size):
                 self._write_to_omero_batch(
-                    {"%sAnnotationLink" % objtype: batch}, loops, ms)
-        for batch in self._batch(self.fileannids, sz=batch_size):
+                    {"%sAnnotationLink" % objtype: batch}, self.loops, self.ms)
+        for batch in self._batch(self.fileannids, sz=self.batch_size):
             self._write_to_omero_batch({"FileAnnotation": batch},
-                                       loops, ms)
+                                       self.loops, self.ms)
 
     def _write_to_omero_batch(self, to_delete, loops=10, ms=500):
         del_cmd = omero.cmd.Delete2(targetObjects=to_delete)
