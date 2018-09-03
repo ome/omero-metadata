@@ -44,7 +44,7 @@ from omero.model import RoiI, PointI, ProjectI, ScreenI
 from omero.rtypes import rdouble, rlist, rstring, unwrap
 from omero.sys import ParametersI
 
-from omero.util.populate_metadata import (
+from populate_metadata import (
     get_config,
     ParsingContext,
     BulkToMapAnnotationContext,
@@ -905,12 +905,10 @@ class TestPopulateMetadataHelper(ITest):
         self.delete(child_anns)
 
         csv = fixture.get_csv()
-        ctx = ParsingContext(self.client, target, file=csv)
+        ctx = ParsingContext(self.client,
+                             target,
+                             file=csv)
         ctx.parse()
-        if batch_size is None:
-            ctx.write_to_omero()
-        else:
-            ctx.write_to_omero(batch_size=batch_size, loops=10, ms=250)
 
         # Get file annotations
         anns = fixture.get_annotations()
@@ -950,14 +948,11 @@ class TestPopulateMetadataHelper(ITest):
         anns = fixture.get_annotations()
         fileid = anns[0].file.id.val
         ctx = BulkToMapAnnotationContext(
-            self.client, target, fileid=fileid, cfg=cfg)
-        ctx.parse()
-        assert len(fixture.get_child_annotations()) == 0
+            self.client, target, fileid=fileid, cfg=cfg, batch_size=batch_size)
 
-        if batch_size is None:
-            ctx.write_to_omero()
-        else:
-            ctx.write_to_omero(batch_size=batch_size)
+        assert len(fixture.get_child_annotations()) == 0
+        ctx.parse()
+
         oas = fixture.get_child_annotations()
         assert len(oas) == fixture.ann_count
         fixture.assert_child_annotations(oas)
@@ -969,14 +964,12 @@ class TestPopulateMetadataHelper(ITest):
         cfg = fixture.get_cfg()
 
         target = fixture.get_target()
-        ctx = DeleteMapAnnotationContext(self.client, target, cfg=cfg)
-        ctx.parse()
-        assert len(fixture.get_child_annotations()) == fixture.ann_count
+        ctx = DeleteMapAnnotationContext(self.client, target,
+                                         cfg=cfg, batch_size=batch_size)
 
-        if batch_size is None:
-            ctx.write_to_omero()
-        else:
-            ctx.write_to_omero(batch_size=batch_size)
+        assert len(fixture.get_child_annotations()) == fixture.ann_count
+        ctx.parse()
+
         assert len(fixture.get_child_annotations()) == 0
         assert len(fixture.get_all_map_annotations()) == 0
 
@@ -1103,11 +1096,10 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         fileid = anns[0].file.id.val
         ctx = BulkToMapAnnotationContext(
             self.client, target, fileid=fileid, cfg=cfg, options=options)
-        ctx.parse()
         assert len(fixture1.get_child_annotations()) == ann_count
         assert len(fixture2.get_child_annotations()) == 0
 
-        ctx.write_to_omero()
+        ctx.parse()
 
         oas1 = fixture1.get_child_annotations()
         oas2 = fixture2.get_child_annotations()
@@ -1160,7 +1152,6 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
             self.client, fixture1.get_target(), cfg=fixture1.get_cfg(),
             options=options)
         ctx.parse()
-        ctx.write_to_omero(loops=10, ms=250)
 
         if ns == NSBULKANNOTATIONS:
             assert len(fixture1.get_child_annotations()) == 8
@@ -1179,7 +1170,6 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
             self.client, fixture2.get_target(), cfg=fixture2.get_cfg(),
             options=options)
         ctx.parse()
-        ctx.write_to_omero(loops=10, ms=250)
 
         if ns == NSBULKANNOTATIONS:
             assert len(fixture1.get_child_annotations()) == 8
@@ -1275,7 +1265,6 @@ class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
         ctx = DeleteMapAnnotationContext(
             self.client, target, attach=attach, options=options)
         ctx.parse()
-        ctx.write_to_omero()
         after = self._get_annotations_config(fixture)
 
         if attach and ns != NSBULKANNOTATIONS:

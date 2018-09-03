@@ -29,7 +29,7 @@ import os
 
 from omero.model import PlateI, WellI, WellSampleI, OriginalFileI
 from omero.rtypes import rint, rstring, unwrap
-from omero.util.populate_metadata import ParsingContext
+from populate_metadata import ParsingContext
 from omero.constants.namespaces import NSBULKANNOTATIONS
 
 
@@ -79,9 +79,10 @@ class TestPopulateMetadata(ITest):
         row_count = 1
         col_count = 2
         plate = self.create_plate(row_count, col_count)
-        ctx = ParsingContext(self.client, plate, csv_name)
+        ctx = ParsingContext(self.client,
+                             plate,
+                             file=csv_name)
         ctx.parse()
-        ctx.write_to_omero()
         # Delete local temp file
         os.remove(csv_name)
 
