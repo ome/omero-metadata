@@ -1277,6 +1277,7 @@ class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
         ctx = DeleteMapAnnotationContext(
             self.client, target, attach=attach, options=options)
         ctx.parse()
+        after = self._get_annotations_config(fixture)
         if attach and ns != NSBULKANNOTATIONS:
             assert len(after) == 0
         else:
