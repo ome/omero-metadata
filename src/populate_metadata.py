@@ -1881,11 +1881,14 @@ class DeleteMapAnnotationContext(_QueryContext):
                                        self.loops, self.ms)
 
     def _write_to_omero_batch(self, to_delete, loops=10, ms=500):
+        import time
         del_cmd = omero.cmd.Delete2(targetObjects=to_delete,
                                     dryRun=self.dry_run)
         try:
+            start = time.time()
             callback = self.client.submit(
                 del_cmd, loops=loops, ms=ms, failontimeout=True)
+            log.debug("Delete completed in %g s" % (time.time() - start))
         except CmdError, ce:
             log.error("Failed to delete: %s" % to_delete)
             raise Exception(ce.err)
