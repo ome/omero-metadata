@@ -1899,7 +1899,7 @@ class DeleteMapAnnotationContext(_QueryContext):
             deleted = rsp.deletedObjects
             log.info("Deleted objects in %g s" % (time.time() - start))
             for k, v in deleted.iteritems():
-                log.info("  %d %s", k, len(v))
+                log.info("  %d %s", len(v), k)
                 log.debug("  %s %s", k, v)
         except AttributeError:
             log.error("Delete failed: %s", rsp)
