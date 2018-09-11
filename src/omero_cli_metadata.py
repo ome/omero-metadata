@@ -478,11 +478,10 @@ class MetadataControl(BaseControl):
 
         loops = 0
         ms = 0
-        if not args.dry_run:
-            wait = args.wait
-            if wait:
-                ms = 5000
-                loops = int((wait * 1000) / ms) + 1
+        wait = args.wait
+        if wait:
+            ms = 5000
+            loops = int((wait * 1000) / ms) + 1
 
         # Note some contexts only support a subset of these args
         ctx = context_class(client, args.obj, file=args.file, fileid=fileid,
