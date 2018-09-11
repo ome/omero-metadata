@@ -1884,11 +1884,10 @@ class DeleteMapAnnotationContext(_QueryContext):
         import time
         del_cmd = omero.cmd.Delete2(targetObjects=to_delete,
                                     dryRun=self.dry_run)
+        start = time.time()
         try:
-            start = time.time()
             callback = self.client.submit(
                 del_cmd, loops=loops, ms=ms, failontimeout=True)
-            log.debug("Delete completed in %g s" % (time.time() - start))
         except CmdError, ce:
             log.error("Failed to delete: %s" % to_delete)
             raise Exception(ce.err)
@@ -1898,9 +1897,10 @@ class DeleteMapAnnotationContext(_QueryContext):
         rsp = callback.getResponse()
         try:
             deleted = rsp.deletedObjects
+            log.info("Deleted objects in %g s" % (time.time() - start))
             for k, v in deleted.iteritems():
-                log.info("Deleted: %s %d", k, len(v))
-                log.debug("Deleted: %s %s", k, v)
+                log.info("  %d %s", k, len(v))
+                log.debug("  %s %s", k, v)
         except AttributeError:
             log.error("Delete failed: %s", rsp)
 
