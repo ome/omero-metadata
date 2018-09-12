@@ -1882,8 +1882,11 @@ class DeleteMapAnnotationContext(_QueryContext):
 
     def _write_to_omero_batch(self, to_delete, loops=10, ms=500):
         import time
-        del_cmd = omero.cmd.Delete2(targetObjects=to_delete,
-                                    dryRun=self.dry_run)
+        del_cmd = omero.cmd.Delete2(
+            targetObjects=to_delete,
+            childOptions=self.options.get("childOptions", None),
+            dryRun=self.dry_run,
+            typesToIgnore=self.options.get("typesToIgnore", None))
         start = time.time()
         try:
             callback = self.client.submit(
