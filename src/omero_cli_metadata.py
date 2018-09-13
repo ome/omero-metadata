@@ -478,17 +478,16 @@ class MetadataControl(BaseControl):
 
         loops = 0
         ms = 0
-        if not args.dry_run:
-            wait = args.wait
-            if wait:
-                ms = 5000
-                loops = int((wait * 1000) / ms) + 1
+        wait = args.wait
+        if wait:
+            ms = 5000
+            loops = int((wait * 1000) / ms) + 1
 
         # Note some contexts only support a subset of these args
         ctx = context_class(client, args.obj, file=args.file, fileid=fileid,
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
-                            loops=loops, ms=ms)
+                            loops=loops, ms=ms, dry_run=args.dry_run)
         ctx.parse()
 
     def rois(self, args):

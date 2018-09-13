@@ -860,7 +860,8 @@ class ParsingContext(object):
 
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
-                 options=None, batch_size=1000, loops=10, ms=500):
+                 options=None, batch_size=1000, loops=10, ms=500,
+                 dry_run=False):
         '''
         This lines should be handled outside of the constructor:
 
@@ -882,6 +883,7 @@ class ParsingContext(object):
         self.parsing_util_factory = ParsingUtilFactory(client,
                                                        target_object,
                                                        self.value_resolver)
+        self.dry_run = dry_run
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
@@ -1380,6 +1382,7 @@ class BulkToMapAnnotationContext(_QueryContext):
             self.batch_size = batch_size
         else:
             self.batch_size = 1000
+        self.dry_run = dry_run
 
     def _init_namespace_primarykeys(self):
         try:
@@ -1701,6 +1704,7 @@ class DeleteMapAnnotationContext(_QueryContext):
             self.batch_size = 1000
         self.loops = loops
         self.ms = ms
+        self.dry_run = dry_run
 
     def parse(self):
         self.populate()
@@ -1877,7 +1881,13 @@ class DeleteMapAnnotationContext(_QueryContext):
                                        self.loops, self.ms)
 
     def _write_to_omero_batch(self, to_delete, loops=10, ms=500):
-        del_cmd = omero.cmd.Delete2(targetObjects=to_delete)
+        import time
+        del_cmd = omero.cmd.Delete2(
+            targetObjects=to_delete,
+            childOptions=self.options.get("childOptions", None),
+            dryRun=self.dry_run,
+            typesToIgnore=self.options.get("typesToIgnore", None))
+        start = time.time()
         try:
             callback = self.client.submit(
                 del_cmd, loops=loops, ms=ms, failontimeout=True)
@@ -1890,9 +1900,10 @@ class DeleteMapAnnotationContext(_QueryContext):
         rsp = callback.getResponse()
         try:
             deleted = rsp.deletedObjects
+            log.info("Deleted objects in %g s" % (time.time() - start))
             for k, v in deleted.iteritems():
-                log.info("Deleted: %s %d", k, len(v))
-                log.debug("Deleted: %s %s", k, v)
+                log.info("  %d %s", len(v), k)
+                log.debug("  %s %s", k, v)
         except AttributeError:
             log.error("Delete failed: %s", rsp)
 

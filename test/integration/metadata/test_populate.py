@@ -964,12 +964,16 @@ class TestPopulateMetadataHelper(ITest):
         cfg = fixture.get_cfg()
 
         target = fixture.get_target()
-        ctx = DeleteMapAnnotationContext(self.client, target,
-                                         cfg=cfg, batch_size=batch_size)
+        ctx = DeleteMapAnnotationContext(
+            self.client, target, cfg=cfg, batch_size=batch_size, dry_run=True)
 
         assert len(fixture.get_child_annotations()) == fixture.ann_count
         ctx.parse()
 
+        ctx = DeleteMapAnnotationContext(
+            self.client, target, cfg=cfg, batch_size=batch_size)
+        assert len(fixture.get_child_annotations()) == fixture.ann_count
+        ctx.parse()
         assert len(fixture.get_child_annotations()) == 0
         assert len(fixture.get_all_map_annotations()) == 0
 
@@ -1263,10 +1267,17 @@ class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
         if ns:
             options['ns'] = ns
         ctx = DeleteMapAnnotationContext(
-            self.client, target, attach=attach, options=options)
+            self.client, target, attach=attach, options=options, dry_run=True)
         ctx.parse()
         after = self._get_annotations_config(fixture)
 
+        assert before[0].id == after[0].id
+        assert before[0].file.id == after[0].file.id
+
+        ctx = DeleteMapAnnotationContext(
+            self.client, target, attach=attach, options=options)
+        ctx.parse()
+        after = self._get_annotations_config(fixture)
         if attach and ns != NSBULKANNOTATIONS:
             assert len(after) == 0
         else:
