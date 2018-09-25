@@ -1,9 +1,11 @@
 CHANGES
 =======
 
-0.3.0
------
+0.3.0a1
+-------
 
+* Fix CLI metadata populate --context deletemap --dry-run behavior
+* Propagate delete options in DeleteMapAnnotationContext
 * Added bulk annotations for Projects and Datasets
 * Changed csv parsing to proceed line-by-line (streaming)
 
