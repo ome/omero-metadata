@@ -833,7 +833,7 @@ class ProjectWrapper(PDIWrapper):
 
 class ParsingUtilFactory(object):
 
-    def get_filter_for_plate(self, column_index, target_name):
+    def get_filter_for_target(self, column_index, target_name):
         return lambda row: True if row[column_index] == target_name else False
 
     def get_generic_filter(self):
@@ -847,10 +847,13 @@ class ParsingUtilFactory(object):
     def get_value_resolver(self):
         return self.value_resolver
 
-    def get_filter_function(self, column_index=-1):
+    def get_filter_function(self, column_index=-1, target_name=""):
         if PlateI is self.target_class and column_index != -1:
-            return self.get_filter_for_plate(
-                column_index, unwrap(self.target_object.getName()))
+            return self.get_filter_for_target(
+                column_index, target_name)
+        elif DatasetI is self.target_class and column_index != -1:
+            return self.get_filter_for_target(
+                column_index, target_name)
         else:
             return self.get_generic_filter()
 
@@ -942,14 +945,19 @@ class ParsingContext(object):
         if first_row_is_types:
             header_row = reader.next()
 
-        plate_header_index = -1
+        filter_header_index = -1
         for i, name in enumerate(header_row):
-            if name.lower() == 'plate':
-                plate_header_index = i
+            if PlateI is self.target_object.__class__ \
+                    and name.lower() == 'plate':
+                filter_header_index = i
+                break
+            if DatasetI is self.target_object.__class__ \
+                    and name.lower() == 'dataset name':
+                filter_header_index = i
                 break
 
         self.filter_function = self.parsing_util_factory.get_filter_function(
-            plate_header_index)
+            filter_header_index, self.value_resolver.wrapper.target_name)
 
         table = self.create_table()
         self.populate_from_reader(reader, self.filter_function, table, 1000)
@@ -1189,7 +1197,8 @@ class ParsingContext(object):
                     log.debug(image_column)
                     iname = image_name_column.values[i]
                     did = self.target_object.id.val
-                    if "dataset name" in columns_by_name:
+                    if "dataset name" in columns_by_name \
+                            and target_class is not DatasetI:
                         dname = columns_by_name["dataset name"].values[i]
                         did = self.value_resolver.wrapper.datasets_by_name[
                             dname].id.val
