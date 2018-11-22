@@ -765,23 +765,9 @@ class GZIP(Dataset2Images):
     def create_csv(self, *args, **kwargs):
         csv_filename = super(GZIP, self).create_csv(*args, **kwargs)
         gzip_filename = "%s.gz" % csv_filename
-        # failing on python 2.6
-        # the following workaround can be reverted once py26 is dropped
-        # with open(csvFileName, 'rb') as f_in:
-        #      with gzip.open(gzipFileName, 'wb') as f_out:
-        #          shutil.copyfileobj(f_in, f_out)
-        f_in = open(csv_filename, 'rb')
-        try:
-            try:
-                try:
-                    f_out = gzip.open(gzip_filename, 'wb')
-                except Exception:
-                    f_out = gzip(gzip_filename, 'wb')
+        with open(csvFileName, 'rb') as f_in:
+            with gzip.open(gzipFileName, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
-            finally:
-                f_out.close()
-        finally:
-            f_in.close()
 
         return gzip_filename
 
