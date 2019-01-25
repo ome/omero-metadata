@@ -733,7 +733,8 @@ class DatasetWrapper(PDIWrapper):
             self.target_objects[i] = unwrap(query_service.findByQuery(
                 'select d from Dataset d where d.id = :id',
                 parameters, {'omero.group': '-1'}))
-            self.target_names[target_object.id.val] = self.target_objects[i].name.val
+            self.target_names[target_object.id.val] = self.target_objects[i]\
+                                                          .name.val
 
             data = list()
             while True:
@@ -757,12 +758,12 @@ class DatasetWrapper(PDIWrapper):
                 iid = image.id.val
                 images_by_id[iid] = image
                 if iname in self.images_by_name:
-                    raise Exception("Image named %s(id=%d) present. (id=%s)" % (
-                        iname, self.images_by_name[iname], iid
-                    ))
+                    raise Exception("Image named %s(id=%d) present. (id=%s)" %
+                                    (iname, self.images_by_name[iname], iid))
                 self.images_by_name[iname] = image
             self.images_by_id[target_object.id.val] = images_by_id
-            log.debug('Completed parsing dataset: %s' % self.target_names[target_object.id.val])
+            log.debug('Completed parsing dataset: %s' %
+                      self.target_names[target_object.id.val])
 
 
 class ProjectWrapper(PDIWrapper):
@@ -922,14 +923,14 @@ class ParsingContext(object):
         self.target_ids = target_objects[1]
         self.target_objects = []
         for oid in target_objects[1]:
-          if target_objects[0] == 'Dataset':
-            self.target_objects.append(DatasetI(long(oid), False))
-          elif target_objects[0] == 'Project':
-            self.target_objects.append(ProjectI(long(oid), False))
-          elif target_objects[0] == 'Screen':
-            self.target_objects.append(ScreenI(long(oid), False))
-          elif target_objects[0] == 'Plate':
-            self.target_objects.append(PlateI(long(oid), False))
+            if target_objects[0] == 'Dataset':
+                self.target_objects.append(DatasetI(long(oid), False))
+            elif target_objects[0] == 'Project':
+                self.target_objects.append(ProjectI(long(oid), False))
+            elif target_objects[0] == 'Screen':
+                self.target_objects.append(ScreenI(long(oid), False))
+            elif target_objects[0] == 'Plate':
+                self.target_objects.append(PlateI(long(oid), False))
 
         self.file = file
         self.column_types = column_types
@@ -975,7 +976,8 @@ class ParsingContext(object):
             header_resolver = HeaderResolver(
                 target_object, header_row,
                 column_types=self.column_types)
-            self.columns[target_object.id.val] = header_resolver.create_columns()
+            self.columns[target_object.id.val] = header_resolver\
+                .create_columns()
             log.debug('Columns: %r' % self.columns)
             if len(self.columns) > MAX_COLUMN_COUNT:
                 log.warn("Column count exceeds max column count")
@@ -1003,8 +1005,10 @@ class ParsingContext(object):
 
         self.filter_functions = dict()
         for target_id in self.target_ids:
-            self.filter_functions[target_id] = self.parsing_util_factory.get_filter_function(
-                filter_header_index, self.value_resolver.wrapper.target_names[target_id])
+            self.filter_functions[target_id] = self.parsing_util_factory\
+                                                   .get_filter_function(
+                filter_header_index,
+                self.value_resolver.wrapper.target_names[target_id])
 
         tables = self.create_tables()
         self.populate_from_reader(reader, self.filter_functions, tables, 1000)
@@ -1024,7 +1028,8 @@ class ParsingContext(object):
                 raise MetadataError(
                     "Unable to create table: %s" % DEFAULT_TABLE_NAME)
             original_file = table.getOriginalFile()
-            log.info('Created new table OriginalFile: %d for %d' % (original_file.id.val, target_id))
+            log.info('Created new table OriginalFile: %d for %d' %
+                     (original_file.id.val, target_id))
             table.initialize(self.columns[target_id])
             tables[target_id] = table
         return tables
@@ -1067,8 +1072,8 @@ class ParsingContext(object):
                         elif column.name.lower() == "plate":
                             column.values.append(value)
                     except TypeError:
-                        log.error('Original value "%s" now "%s" of bad type!' % (
-                            original_value, value))
+                        log.error('Original value "%s" now "%s" of '
+                                  'bad type!' % (original_value, value))
                         raise
                 self.post_process(target_id)
                 for column in columns:

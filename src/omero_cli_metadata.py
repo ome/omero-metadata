@@ -149,7 +149,7 @@ class ComplexProxyStringType(object):
                 else:
                     ids.append(long(id))
             return klass, ids
-        except:
+        except Exception:
             raise ValueError("Bad object: %s", arg)
 
     def __repr__(self):
