@@ -290,6 +290,11 @@ class ValueResolver(object):
     """
     Value resolver for column types which is responsible for filling up
     non-metadata columns with their OMERO data model identifiers.
+
+    Arguments:
+    client -- The OMERO client
+    target_objects -- A list of target objects (all must have the same
+    type), e.g. a list of DatasetI objects
     """
 
     AS_ALPHA = [chr(v) for v in range(97, 122 + 1)]  # a-z
@@ -298,21 +303,28 @@ class ValueResolver(object):
         AS_ALPHA.append('a' + chr(v))
     WELL_REGEX = re.compile(r'^([a-zA-Z]+)(\d+)$')
 
-    def __init__(self, client, target_object):
+    def __init__(self, client, target_objects):
         self.client = client
-        self.target_object = target_object
-        self.target_class = self.target_object.__class__
-        self.target_type = self.target_object.ice_staticId().split('::')[-1]
-        self.target_id = self.target_object.id.val
-        q = "select x.details.group.id from %s x where x.id = %d " % (
-            self.target_type, self.target_id
-        )
-        rows = unwrap(
-            self.client.sf.getQueryService().projection(
-                q, None, {'omero.group': '-1'}))
-        if rows is None or len(rows) != 1:
-            raise MetadataError(
-                "Cannot find %s:%d" % (self.target_type, self.target_id))
+        self.target_objects = target_objects
+        self.target_class = self.target_objects[0].__class__
+        assert all(map(lambda obj: obj.__class__ == self.target_class,
+                   self.target_objects))
+        self.target_type = self.target_objects[0]\
+                               .ice_staticId().split('::')[-1]
+        self.target_ids = []
+        for obj in target_objects:
+            oid = obj._id._val
+            self.target_ids.append(oid)
+            q = "select x.details.group.id from %s x where x.id = %d " % (
+                self.target_type, oid
+            )
+            rows = unwrap(
+                self.client.sf.getQueryService().projection(
+                    q, None, {'omero.group': '-1'}))
+            if rows is None or len(rows) != 1:
+                raise MetadataError(
+                    "Cannot find %s:%d" % (self.target_type, oid))
+
         self.target_group = rows[0][0]
         # The goal is to make this the only instance of
         # a if/elif/else block on the target_class. All
@@ -486,7 +498,7 @@ class ValueWrapper(object):
     def __init__(self, value_resolver):
         self.resolver = value_resolver
         self.client = value_resolver.client
-        self.target_object = value_resolver.target_object
+        self.target_objects = value_resolver.target_objects
         self.target_class = value_resolver.target_class
 
     def subselect(self, rows, names):
@@ -709,44 +721,48 @@ class DatasetWrapper(PDIWrapper):
 
     def _load(self):
         query_service = self.client.getSession().getQueryService()
-        parameters = omero.sys.ParametersI()
-        parameters.addId(self.target_object.id.val)
-        log.debug('Loading Dataset:%d' % self.target_object.id.val)
 
-        parameters.page(0, 1)
-        self.target_object = unwrap(query_service.findByQuery(
-            'select d from Dataset d where d.id = :id',
-            parameters, {'omero.group': '-1'}))
-        self.target_name = self.target_object.name.val
+        self.target_names = dict()
 
-        data = list()
-        while True:
-            parameters.page(len(data), 1000)
-            rv = query_service.findAllByQuery((
-                'select distinct i from Dataset as d '
-                'join d.imageLinks as l '
-                'join l.child as i '
-                'where d.id = :id order by i.id desc'),
-                parameters, {'omero.group': '-1'})
-            if len(rv) == 0:
-                break
-            else:
-                data.extend(rv)
-        if not data:
-            raise MetadataError('Could not find target object!')
+        for i, target_object in enumerate(self.target_objects):
+            parameters = omero.sys.ParametersI()
+            parameters.addId(target_object.id.val)
+            log.debug('Loading Dataset:%d' % target_object.id.val)
 
-        images_by_id = dict()
-        for image in data:
-            iname = image.name.val
-            iid = image.id.val
-            images_by_id[iid] = image
-            if iname in self.images_by_name:
-                raise Exception("Image named %s(id=%d) present. (id=%s)" % (
-                    iname, self.images_by_name[iname], iid
-                ))
-            self.images_by_name[iname] = image
-        self.images_by_id[self.target_object.id.val] = images_by_id
-        log.debug('Completed parsing dataset: %s' % self.target_name)
+            parameters.page(0, 1)
+            self.target_objects[i] = unwrap(query_service.findByQuery(
+                'select d from Dataset d where d.id = :id',
+                parameters, {'omero.group': '-1'}))
+            self.target_names[target_object.id.val] = self.target_objects[i].name.val
+
+            data = list()
+            while True:
+                parameters.page(len(data), 1000)
+                rv = query_service.findAllByQuery((
+                    'select distinct i from Dataset as d '
+                    'join d.imageLinks as l '
+                    'join l.child as i '
+                    'where d.id = :id order by i.id desc'),
+                    parameters, {'omero.group': '-1'})
+                if len(rv) == 0:
+                    break
+                else:
+                    data.extend(rv)
+            if not data:
+                raise MetadataError('Could not find target object!')
+
+            images_by_id = dict()
+            for image in data:
+                iname = image.name.val
+                iid = image.id.val
+                images_by_id[iid] = image
+                if iname in self.images_by_name:
+                    raise Exception("Image named %s(id=%d) present. (id=%s)" % (
+                        iname, self.images_by_name[iname], iid
+                    ))
+                self.images_by_name[iname] = image
+            self.images_by_id[target_object.id.val] = images_by_id
+            log.debug('Completed parsing dataset: %s' % self.target_names[target_object.id.val])
 
 
 class ProjectWrapper(PDIWrapper):
@@ -832,17 +848,24 @@ class ProjectWrapper(PDIWrapper):
 
 
 class ParsingUtilFactory(object):
+    """ A ParsingUtilFactory
+
+    Arguments:
+    client --
+    target_objects -- A list of target objects, e.g. a list of DatasetI objects
+    value_resolver -- The value resolver
+    """
+
+    def __init__(self, client, target_objects, value_resolver):
+        self.target_objects = target_objects
+        self.target_class = target_objects[0].__class__
+        self.value_resolver = value_resolver
 
     def get_filter_for_target(self, column_index, target_name):
         return lambda row: True if row[column_index] == target_name else False
 
     def get_generic_filter(self):
         return lambda row: True
-
-    def __init__(self, client, target_object, value_resolver):
-        self.target_object = target_object
-        self.target_class = target_object.__class__
-        self.value_resolver = value_resolver
 
     def get_value_resolver(self):
         return self.value_resolver
@@ -859,9 +882,26 @@ class ParsingUtilFactory(object):
 
 
 class ParsingContext(object):
-    """Generic parsing context for CSV files."""
+    """Generic parsing context for CSV files.
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    Arguments:
+    client -- The OMERO client
+    target_objects -- A tuple specifying the target object
+    class [0] (e. g. 'Dataset') and a list of object ids [1]
+    file -- ?
+    fileid -- ?
+    cfg -- ?
+    cfgid -- ?
+    attach -- ?
+    column_types -- ?
+    options -- ?
+    batch_size -- ?
+    loops -- ?
+    ms -- ?
+    dry_run -- ?
+    """
+
+    def __init__(self, client, target_objects, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None, batch_size=1000, loops=10, ms=500,
                  dry_run=False):
@@ -879,17 +919,28 @@ class ParsingContext(object):
         '''
 
         self.client = client
-        self.target_object = target_object
+        self.target_ids = target_objects[1]
+        self.target_objects = []
+        for oid in target_objects[1]:
+          if target_objects[0] == 'Dataset':
+            self.target_objects.append(DatasetI(long(oid), False))
+          elif target_objects[0] == 'Project':
+            self.target_objects.append(ProjectI(long(oid), False))
+          elif target_objects[0] == 'Screen':
+            self.target_objects.append(ScreenI(long(oid), False))
+          elif target_objects[0] == 'Plate':
+            self.target_objects.append(PlateI(long(oid), False))
+
         self.file = file
         self.column_types = column_types
-        self.value_resolver = ValueResolver(client, target_object)
+        self.value_resolver = ValueResolver(client, self.target_objects)
         self.parsing_util_factory = ParsingUtilFactory(client,
-                                                       target_object,
+                                                       self.target_objects,
                                                        self.value_resolver)
         self.dry_run = dry_run
 
     def create_annotation_link(self):
-        self.target_class = self.target_object.__class__
+        self.target_class = self.target_objects[0].__class__
         if ScreenI is self.target_class:
             return ScreenAnnotationLinkI()
         if PlateI is self.target_class:
@@ -900,15 +951,6 @@ class ParsingContext(object):
             return ProjectAnnotationLinkI()
         raise MetadataError(
             'Unsupported target object class: %s' % self.target_class)
-
-    def get_column_widths(self):
-        widths = list()
-        for column in self.columns:
-            try:
-                widths.append(column.size)
-            except AttributeError:
-                widths.append(None)
-        return widths
 
     def preprocess_from_handle(self, data):
         reader = csv.reader(data, delimiter=',')
@@ -927,13 +969,16 @@ class ParsingContext(object):
         if self.column_types is None and first_row_is_types:
             self.column_types = HeaderResolver.get_column_types(first_row)
         log.debug('Column types: %r' % self.column_types)
-        self.header_resolver = HeaderResolver(
-            self.target_object, header_row,
-            column_types=self.column_types)
-        self.columns = self.header_resolver.create_columns()
-        log.debug('Columns: %r' % self.columns)
-        if len(self.columns) > MAX_COLUMN_COUNT:
-            log.warn("Column count exceeds max column count")
+
+        self.columns = dict()
+        for target_object in self.target_objects:
+            header_resolver = HeaderResolver(
+                target_object, header_row,
+                column_types=self.column_types)
+            self.columns[target_object.id.val] = header_resolver.create_columns()
+            log.debug('Columns: %r' % self.columns)
+            if len(self.columns) > MAX_COLUMN_COUNT:
+                log.warn("Column count exceeds max column count")
 
         self.preprocess_data(reader)
 
@@ -947,38 +992,42 @@ class ParsingContext(object):
 
         filter_header_index = -1
         for i, name in enumerate(header_row):
-            if PlateI is self.target_object.__class__ \
+            if PlateI is self.target_objects[0].__class__ \
                     and name.lower() == 'plate':
                 filter_header_index = i
                 break
-            if DatasetI is self.target_object.__class__ \
+            if DatasetI is self.target_objects[0].__class__ \
                     and name.lower() == 'dataset name':
                 filter_header_index = i
                 break
 
-        self.filter_function = self.parsing_util_factory.get_filter_function(
-            filter_header_index, self.value_resolver.wrapper.target_name)
+        self.filter_functions = dict()
+        for target_id in self.target_ids:
+            self.filter_functions[target_id] = self.parsing_util_factory.get_filter_function(
+                filter_header_index, self.value_resolver.wrapper.target_names[target_id])
 
-        table = self.create_table()
-        self.populate_from_reader(reader, self.filter_function, table, 1000)
-        self.create_file_annotation(table)
+        tables = self.create_tables()
+        self.populate_from_reader(reader, self.filter_functions, tables, 1000)
+        self.create_file_annotation(tables)
 
-        log.debug('Column widths: %r' % self.get_column_widths())
-        log.debug('Columns: %r' % [
-            (o.name, len(o.values)) for o in self.columns])
-
-    def create_table(self):
+    def create_tables(self):
+        """ Creates the OMERO tables, one for each target_object.
+        Returns them as dictionayr with the target_object id as key.
+        """
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         sr = sf.sharedResources()
-        table = sr.newTable(1, DEFAULT_TABLE_NAME, {'omero.group': group})
-        if table is None:
-            raise MetadataError(
-                "Unable to create table: %s" % DEFAULT_TABLE_NAME)
-        original_file = table.getOriginalFile()
-        log.info('Created new table OriginalFile:%d' % original_file.id.val)
-        table.initialize(self.columns)
-        return table
+        tables = dict()
+        for target_id in self.target_ids:
+            table = sr.newTable(1, DEFAULT_TABLE_NAME, {'omero.group': group})
+            if table is None:
+                raise MetadataError(
+                    "Unable to create table: %s" % DEFAULT_TABLE_NAME)
+            original_file = table.getOriginalFile()
+            log.info('Created new table OriginalFile: %d for %d' % (original_file.id.val, target_id))
+            table.initialize(self.columns[target_id])
+            tables[target_id] = table
+        return tables
 
     def parse(self):
         if self.file.endswith(".gz"):
@@ -995,43 +1044,46 @@ class ParsingContext(object):
             data.close()
 
     def preprocess_data(self, reader):
-        # Get count of data columns - e.g. NOT Well Name
-        column_count = 0
-        for column in self.columns:
-            if column.name not in ADDED_COLUMN_NAMES:
-                column_count += 1
         for i, row in enumerate(reader):
-            row = [(self.columns[i], value) for i, value in enumerate(row)]
-            for column, original_value in row:
-                log.debug('Original value %s, %s',
-                          original_value, column.name)
-                value = self.value_resolver.resolve(
-                    column, original_value, row)
-                if value.__class__ is Skip:
-                    break
-                try:
-                    log.debug("Value's class: %s" % value.__class__)
-                    if value.__class__ is str:
-                        column.size = max(column.size, len(value))
-                    # The following are needed for
-                    # getting post process column sizes
-                    if column.__class__ is WellColumn:
-                        column.values.append(value)
-                    elif column.__class__ is ImageColumn:
-                        column.values.append(value)
-                    elif column.name.lower() == "plate":
-                        column.values.append(value)
-                except TypeError:
-                    log.error('Original value "%s" now "%s" of bad type!' % (
-                        original_value, value))
-                    raise
-            self.post_process()
-            for column in self.columns:
-                column.values = []
+            for target_id, columns in self.columns.iteritems():
+                erow = [(columns[i], value) for i, value in enumerate(row)]
+                for column, original_value in erow:
+                    log.debug('Original value %s, %s',
+                              original_value, column.name)
+                    value = self.value_resolver.resolve(
+                        column, original_value, erow)
+                    if value.__class__ is Skip:
+                        break
+                    try:
+                        log.debug("Value's class: %s" % value.__class__)
+                        if value.__class__ is str:
+                            column.size = max(column.size, len(value))
+                        # The following are needed for
+                        # getting post process column sizes
+                        if column.__class__ is WellColumn:
+                            column.values.append(value)
+                        elif column.__class__ is ImageColumn:
+                            column.values.append(value)
+                        elif column.name.lower() == "plate":
+                            column.values.append(value)
+                    except TypeError:
+                        log.error('Original value "%s" now "%s" of bad type!' % (
+                            original_value, value))
+                        raise
+                self.post_process(target_id)
+                for column in columns:
+                    column.values = []
 
-    def populate_row(self, row):
+    def populate_row(self, row, target_id):
+        """ Populates a row (?) for a specific target.
+        Arguments:
+        row -- The row (?)
+        target_id -- The Id of the target_object
+        """
         values = list()
-        row = [(self.columns[i], value) for i, value in enumerate(row)]
+        assert target_id in self.columns
+        columns = self.columns[target_id]
+        row = [(columns[i], value) for i, value in enumerate(row)]
         for column, original_value in row:
             log.debug('Original value %s, %s',
                       original_value, column.name)
@@ -1042,7 +1094,7 @@ class ParsingContext(object):
             values.append(value)
         if value.__class__ is not Skip:
             values.reverse()
-            for column in self.columns:
+            for column in columns:
                 if not values:
                     if isinstance(column, ImageColumn) or \
                        column.name in (PLATE_NAME_COLUMN,
@@ -1058,45 +1110,81 @@ class ParsingContext(object):
                 else:
                     column.values.append(values.pop())
 
-    def populate_from_reader(self,
-                             reader,
-                             filter_function,
-                             table,
-                             batch_size=1000):
-        row_count = 0
+    def populate_from_reader(self, reader, filter_functions,
+                             tables, batch_size=1000):
+        """
+        Populates from the reader (?)
+
+        Arguments:
+        reader -- The reader
+        filter_functions - The functions to filter the content with respect
+        to the target objects
+        tables -- The OMERO tables
+        batch_size -- ?
+        """
+        row_counts = dict()
+        for target_id, table in tables.iteritems():
+            row_counts[target_id] = 0
+
         for (r, row) in enumerate(reader):
             log.debug('Row %d', r)
-            if filter_function(row):
-                self.populate_row(row)
-                row_count = row_count + 1
-                if row_count >= batch_size:
-                    self.post_process()
-                    table.addData(self.columns)
-                    for column in self.columns:
-                        column.values = []
-                    row_count = 0
-        if row_count != 0:
-            log.debug("DATA TO ADD")
-            log.debug(self.columns)
-            self.post_process()
-            table.addData(self.columns)
-        table.close()
+            for target_id, filter_function in filter_functions.iteritems():
+                if filter_function(row):
+                    self.populate_row(row, target_id)
+                    row_counts[target_id] = row_counts[target_id] + 1
+                    if row_counts[target_id] >= batch_size:
+                        self.post_process(target_id)
+                        tables[target_id].addData(self.columns[target_id])
+                        for column in self.columns[target_id]:
+                            column.values = []
+                        row_counts[target_id] = 0
 
-    def create_file_annotation(self, table):
+        for target_id, row_count in row_counts.iteritems():
+            if row_count != 0:
+                self.post_process(target_id)
+                tables[target_id].addData(self.columns[target_id])
+
+        for target_id, table in tables.iteritems():
+            table.close()
+
+    def create_file_annotation(self, tables):
+        """ Creates and links all file annotations
+        for the given tables
+        Arguments:
+        tables -- The OMERO tables
+        """
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
+        target_class = self.target_objects[0].__class__
         update_service = sf.getUpdateService()
 
-        original_file = table.getOriginalFile()
-        file_annotation = FileAnnotationI()
-        file_annotation.ns = rstring(
-            'openmicroscopy.org/omero/bulk_annotations')
-        file_annotation.description = rstring(DEFAULT_TABLE_NAME)
-        file_annotation.file = OriginalFileI(original_file.id.val, False)
-        link = self.create_annotation_link()
-        link.parent = self.target_object
-        link.child = file_annotation
-        update_service.saveObject(link, {'omero.group': group})
+        for target_id, table in tables.iteritems():
+            target = self.targetobject_by_id(target_id)
+            if target is None:
+                log.error("Target object (%s %d) not found!"
+                          % (target_class, target_id))
+                continue
+            original_file = table.getOriginalFile()
+            file_annotation = FileAnnotationI()
+            file_annotation.ns = rstring(
+                'openmicroscopy.org/omero/bulk_annotations')
+            file_annotation.description = rstring(DEFAULT_TABLE_NAME)
+            file_annotation.file = OriginalFileI(original_file.id.val, False)
+            link = self.create_annotation_link()
+            link.parent = target
+            link.child = file_annotation
+            update_service.saveObject(link, {'omero.group': group})
+
+    def targetobject_by_id(self, target_id):
+        """ Finds the target object from the given id.
+        Returns the target object or None if not found.
+        Arguments:
+        target_id -- The id of the target object
+        """
+        for targetobject in self.target_objects:
+            if targetobject._id._val == target_id:
+                return targetobject
+        return None
 
     def populate(self, rows):
         nrows = len(rows)
@@ -1104,8 +1192,15 @@ class ParsingContext(object):
             log.debug('Row %d/%d', r + 1, nrows)
             self.populate_row(row)
 
-    def post_process(self):
-        target_class = self.target_object.__class__
+    def post_process(self, target_id):
+        """
+        Post processes the columns.
+        Arguments:
+        target_id -- The id of the target objects which
+        columns should be processed
+        """
+        target_class = self.target_objects[0].__class__
+        columns = self.columns[target_id]
         columns_by_name = dict()
         well_column = None
         well_name_column = None
@@ -1114,7 +1209,7 @@ class ParsingContext(object):
         image_name_column = None
         resolve_image_names = False
         resolve_image_ids = False
-        for column in self.columns:
+        for column in columns:
             columns_by_name[column.name.lower()] = column
             if column.__class__ is PlateColumn:
                 log.warn("PlateColumn is unimplemented")
@@ -1142,7 +1237,7 @@ class ParsingContext(object):
             log.info('Nothing to do during post processing.')
             return
 
-        sz = max([len(x.values) for x in self.columns])
+        sz = max([len(x.values) for x in columns])
         for i in range(0, sz):
             if well_name_column is not None:
 
@@ -1169,9 +1264,8 @@ class ParsingContext(object):
                     resolve_image_names and not resolve_image_ids:
                 iname = ""
                 try:
-                    log.debug(image_name_column)
                     iid = image_column.values[i]
-                    did = self.target_object.id.val
+                    did = target_id
                     if "dataset name" in columns_by_name:
                         dname = columns_by_name["dataset name"].values[i]
                         did = self.value_resolver.wrapper.datasets_by_name[
@@ -1194,9 +1288,8 @@ class ParsingContext(object):
                     resolve_image_ids and not resolve_image_names:
                 iid = -1
                 try:
-                    log.debug(image_column)
                     iname = image_name_column.values[i]
-                    did = self.target_object.id.val
+                    did = target_id
                     if "dataset name" in columns_by_name \
                             and target_class is not DatasetI:
                         dname = columns_by_name["dataset name"].values[i]
@@ -1950,8 +2043,8 @@ if __name__ == "__main__":
         usage(msg)
 
     try:
-        target_object, file = args
-        target_object = parse_target_object(target_object)
+        target_objects, file = args
+        target_object = parse_target_object(target_objects)
     except ValueError:
         usage('Target object and file must be a specified!')
 

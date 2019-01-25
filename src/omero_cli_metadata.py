@@ -16,7 +16,6 @@ import re
 import omero
 from omero.cli import BaseControl
 
-from omero.cli import ProxyStringType
 from omero.constants import namespaces
 from omero.gateway import BlitzGateway
 import populate_metadata
@@ -126,6 +125,37 @@ class Metadata(object):
         return "<Metadata%s>" % self.obj_wrapper
 
 
+class ComplexProxyStringType(object):
+    """ Similar to cli.py's GraphArg object.
+    Used to specify multiple target objects,
+    like Dataset:1,2,3 or Dataset:1-3.
+    """
+    def __init__(self):
+        pass
+
+    def __call__(self, arg):
+        try:
+            parts = arg.split(":", 1)
+            assert len(parts) == 2
+            assert '+' not in parts[0]
+            klass = parts[0].lstrip("/")
+            ids = []
+            for id in parts[1].split(","):
+                if "-" in id:
+                    low, high = map(long, id.split("-"))
+                    if high < low:
+                        raise ValueError("Bad range: %s", arg)
+                    ids.extend(range(low, high+1))
+                else:
+                    ids.append(long(id))
+            return klass, ids
+        except:
+            raise ValueError("Bad object: %s", arg)
+
+    def __repr__(self):
+        return "argument"
+
+
 class MetadataControl(BaseControl):
 
     POPULATE_CONTEXTS = (
@@ -159,8 +189,8 @@ class MetadataControl(BaseControl):
         for x in (summary, original, bulkanns, measures, mapanns, allanns,
                   rois, populate, populateroi, pixelsize):
             x.add_argument("obj",
-                           type=ProxyStringType(),
-                           help="Object in Class:ID format")
+                           type=ComplexProxyStringType(),
+                           help="Object in Class:ID[,ID_2,ID_3] format")
 
         for x in (bulkanns, measures, mapanns, allanns,
                   rois, populate, populateroi):
@@ -233,8 +263,22 @@ class MetadataControl(BaseControl):
         # and catch ObjectLoadException
         client, conn = self._clientconn(args)
         conn.SERVICE_OPTS.setOmeroGroup('-1')
-        klass = args.obj.ice_staticId().split("::")[-1]
-        oid = args.obj.id.val
+
+        objects = []
+
+        # args.obj is a tuple of class name and list of
+        # ids, e. g. ('Dataset', [1, 2, 3])
+        assert len(args.obj) == 2
+        assert isinstance(args.obj, tuple)
+        assert isinstance(args.obj[1], list)
+
+        for obj_id in args.obj[1]:
+            objects.append(self._load_object(conn, args.obj[0], obj_id,
+                                             die_on_failure))
+
+        return objects
+
+    def _load_object(self, conn, klass, oid, die_on_failure=True):
         wrapper = conn.getObject(klass, oid)
         if not wrapper:
             e = ObjectLoadException(klass, oid)
