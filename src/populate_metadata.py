@@ -887,8 +887,9 @@ class ParsingContext(object):
 
     Arguments:
     client -- The OMERO client
-    target_objects -- A tuple specifying the target object
-    class [0] (e. g. 'Dataset') and a list of object ids [1]
+    target_objects -- The target object (e.g. DatasetI) with id set, a list
+    of target objects, or a tuple specifying the type and a list of ids, e. g.
+    ('Dataset', [1,2,3])
     file -- ?
     fileid -- ?
     cfg -- ?
@@ -920,17 +921,28 @@ class ParsingContext(object):
         '''
 
         self.client = client
-        self.target_ids = target_objects[1]
-        self.target_objects = []
-        for oid in target_objects[1]:
-            if target_objects[0] == 'Dataset':
-                self.target_objects.append(DatasetI(long(oid), False))
-            elif target_objects[0] == 'Project':
-                self.target_objects.append(ProjectI(long(oid), False))
-            elif target_objects[0] == 'Screen':
-                self.target_objects.append(ScreenI(long(oid), False))
-            elif target_objects[0] == 'Plate':
-                self.target_objects.append(PlateI(long(oid), False))
+
+        # target_objects can have a variety of specifications
+        if isinstance(target_objects, tuple):
+            # a tuple like (Dataset, [1,2,3])
+            self.target_objects = []
+            self.target_ids = target_objects[1]
+            for oid in target_objects[1]:
+                if target_objects[0] == 'Dataset':
+                    self.target_objects.append(DatasetI(long(oid), False))
+                elif target_objects[0] == 'Project':
+                    self.target_objects.append(ProjectI(long(oid), False))
+                elif target_objects[0] == 'Screen':
+                    self.target_objects.append(ScreenI(long(oid), False))
+                elif target_objects[0] == 'Plate':
+                    self.target_objects.append(PlateI(long(oid), False))
+        elif isinstance(target_objects, list):
+            # a list of objects like DatasetI (with ids set!)
+            self.target_objects = target_objects
+            self.target_ids = [obj._id._val for obj in target_objects]
+        else:
+            # or just a single object like DatasetI (with id set!)
+            self.target_objects = [target_objects]
 
         self.file = file
         self.column_types = column_types
@@ -1447,7 +1459,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     Processor for creating MapAnnotations from BulkAnnotations.
     """
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    def __init__(self, client, target_objects, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=10, dry_run=False):
         """
@@ -1466,8 +1478,10 @@ class BulkToMapAnnotationContext(_QueryContext):
         if file and not fileid:
             raise MetadataError('file not supported for %s' % type(self))
 
+        assert len(target_objects) == 0
+
         # Reload object to get .details
-        self.target_object = self.get_target(target_object)
+        self.target_object = self.get_target(target_objects[0])
         if fileid:
             self.ofileid = fileid
         else:
@@ -1778,7 +1792,7 @@ class DeleteMapAnnotationContext(_QueryContext):
     on these types: Image WellSample Well PlateAcquisition Plate Screen
     """
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    def __init__(self, client, target_objects, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=500, dry_run=False):
 
@@ -1791,7 +1805,10 @@ class DeleteMapAnnotationContext(_QueryContext):
                default False)
         """
         super(DeleteMapAnnotationContext, self).__init__(client)
-        self.target_object = target_object
+
+        assert len(target_objects) == 0
+
+        self.target_object = target_objects[0]
         self.attach = attach
 
         if cfg or cfgid:
