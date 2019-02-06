@@ -603,43 +603,48 @@ class ScreenWrapper(SPWWrapper):
 
     def _load(self):
         query_service = self.client.getSession().getQueryService()
-        parameters = omero.sys.ParametersI()
-        parameters.addId(self.target_object.id.val)
-        log.debug('Loading Screen:%d' % self.target_object.id.val)
-        self.target_object = query_service.findByQuery((
-            'select s from Screen as s '
-            'join fetch s.plateLinks as p_link '
-            'join fetch p_link.child as p '
-            'where s.id = :id'), parameters, {'omero.group': '-1'})
-        if self.target_object is None:
-            raise MetadataError('Could not find target object!')
-        self.target_name = unwrap(self.target_object.getName())
+
+        self.target_names = dict()
         self.images_by_id = dict()
         self.wells_by_location = dict()
         self.wells_by_id = dict()
         self.plates_by_name = dict()
         self.plates_by_id = dict()
-        images_by_id = dict()
-        self.images_by_id[self.target_object.id.val] = images_by_id
-        for plate in (l.child for l in self.target_object.copyPlateLinks()):
+
+        for i, target_object in enumerate(self.target_objects):
             parameters = omero.sys.ParametersI()
-            parameters.addId(plate.id.val)
-            plate = query_service.findByQuery((
-                'select p from Plate p '
-                'join fetch p.wells as w '
-                'join fetch w.wellSamples as ws '
-                'join fetch ws.image as i '
-                'where p.id = :id'), parameters, {'omero.group': '-1'})
-            plate = PlateData(plate)
-            self.plates_by_name[plate.name.val] = plate
-            self.plates_by_id[plate.id.val] = plate
-            wells_by_location = dict()
-            wells_by_id = dict()
-            self.wells_by_location[plate.name.val] = wells_by_location
-            self.wells_by_id[plate.id.val] = wells_by_id
-            self.parse_plate(
-                plate, wells_by_location, wells_by_id, images_by_id
-            )
+            parameters.addId(target_object.id.val)
+            log.debug('Loading Screen:%d' % target_object.id.val)
+            target_object = query_service.findByQuery((
+                'select s from Screen as s '
+                'join fetch s.plateLinks as p_link '
+                'join fetch p_link.child as p '
+                'where s.id = :id'), parameters, {'omero.group': '-1'})
+            if target_object is None:
+                raise MetadataError('Could not find target object!')
+            self.target_names[target_object.id.val] = unwrap(target_object.getName())
+            
+            images_by_id = dict()
+            self.images_by_id[target_object.id.val] = images_by_id
+            for plate in (l.child for l in target_object.copyPlateLinks()):
+                parameters = omero.sys.ParametersI()
+                parameters.addId(plate.id.val)
+                plate = query_service.findByQuery((
+                    'select p from Plate p '
+                    'join fetch p.wells as w '
+                    'join fetch w.wellSamples as ws '
+                    'join fetch ws.image as i '
+                    'where p.id = :id'), parameters, {'omero.group': '-1'})
+                plate = PlateData(plate)
+                self.plates_by_name[plate.name.val] = plate
+                self.plates_by_id[plate.id.val] = plate
+                wells_by_location = dict()
+                wells_by_id = dict()
+                self.wells_by_location[plate.name.val] = wells_by_location
+                self.wells_by_id[plate.id.val] = wells_by_id
+                self.parse_plate(
+                    plate, wells_by_location, wells_by_id, images_by_id
+                )
 
 
 class PlateWrapper(SPWWrapper):
@@ -649,8 +654,12 @@ class PlateWrapper(SPWWrapper):
         self._load()
 
     def get_well_by_id(self, well_id, plate=None):
-        plate = self.target_object.id.val
-        wells = self.wells_by_id[plate]
+        if plate is not None:
+            wells = self.wells_by_id[plate]
+        else:
+            for key, value in self.wells_by_id.iteritems():
+                if well_id in value:
+                    wells = value
         return wells[well_id]
 
     def subselect(self, rows, names):
@@ -670,33 +679,37 @@ class PlateWrapper(SPWWrapper):
 
     def _load(self):
         query_service = self.client.getSession().getQueryService()
-        parameters = omero.sys.ParametersI()
-        parameters.addId(self.target_object.id.val)
-        log.debug('Loading Plate:%d' % self.target_object.id.val)
-        self.target_object = query_service.findByQuery((
-            'select p from Plate as p '
-            'join fetch p.wells as w '
-            'join fetch w.wellSamples as ws '
-            'join fetch ws.image as i '
-            'where p.id = :id'), parameters, {'omero.group': '-1'})
-        if self.target_object is None:
-            raise MetadataError('Could not find target object!')
-        self.target_name = unwrap(self.target_object.getName())
+
+        self.target_names = dict()
         self.wells_by_location = dict()
         self.wells_by_id = dict()
-        wells_by_location = dict()
-        wells_by_id = dict()
-
         self.images_by_id = dict()
-        images_by_id = dict()
 
-        self.wells_by_location[self.target_object.name.val] = wells_by_location
-        self.wells_by_id[self.target_object.id.val] = wells_by_id
-        self.images_by_id[self.target_object.id.val] = images_by_id
-        self.parse_plate(
-            PlateData(self.target_object),
-            wells_by_location, wells_by_id, images_by_id
-        )
+        for i, target_object in enumerate(self.target_objects):
+            parameters = omero.sys.ParametersI()
+            parameters.addId(target_object.id.val)
+            log.debug('Loading Plate:%d' % target_object.id.val)
+            target_object = query_service.findByQuery((
+                'select p from Plate as p '
+                'join fetch p.wells as w '
+                'join fetch w.wellSamples as ws '
+                'join fetch ws.image as i '
+                'where p.id = :id'), parameters, {'omero.group': '-1'})
+            if target_object is None:
+                raise MetadataError('Could not find target object!')
+            self.target_names[target_object.id.val] = unwrap(target_object.getName())
+            
+            wells_by_location = dict()
+            wells_by_id = dict()
+            images_by_id = dict()
+
+            self.wells_by_location[target_object.name.val] = wells_by_location
+            self.wells_by_id[target_object.id.val] = wells_by_id
+            self.images_by_id[target_object.id.val] = images_by_id
+            self.parse_plate(
+                PlateData(target_object),
+                wells_by_location, wells_by_id, images_by_id
+            )
 
 
 class PDIWrapper(ValueWrapper):
@@ -791,61 +804,65 @@ class ProjectWrapper(PDIWrapper):
 
     def _load(self):
         query_service = self.client.getSession().getQueryService()
-        parameters = omero.sys.ParametersI()
-        parameters.addId(self.target_object.id.val)
-        log.debug('Loading Project:%d' % self.target_object.id.val)
 
-        parameters.page(0, 1)
-        self.target_object = unwrap(query_service.findByQuery(
-            'select p from Project p where p.id = :id',
-            parameters, {'omero.group': '-1'}))
-        self.target_name = self.target_object.name.val
+        self.target_names = dict()
 
-        data = list()
-        while True:
-            parameters.page(len(data), 1000)
-            rv = unwrap(query_service.projection((
-                'select distinct d, i '
-                'from Project p '
-                'join p.datasetLinks as pdl '
-                'join pdl.child as d '
-                'join d.imageLinks as l '
-                'join l.child as i '
-                'where p.id = :id order by i.id desc'),
+        for i, target_object in enumerate(self.target_objects):
+            parameters = omero.sys.ParametersI()
+            parameters.addId(target_object.id.val)
+            log.debug('Loading Project:%d' % target_object.id.val)
+
+            parameters.page(0, 1)
+            target_object = unwrap(query_service.findByQuery(
+                'select p from Project p where p.id = :id',
                 parameters, {'omero.group': '-1'}))
-            if len(rv) == 0:
-                break
-            else:
-                data.extend(rv)
-        if not data:
-            raise MetadataError('Could not find target object!')
+            self.target_names[target_object.id.val] = target_object.name.val
 
-        seen = dict()
-        for dataset, image in data:
-            did = dataset.id.val
-            dname = dataset.name.val
-            iid = image.id.val
-            iname = image.name.val
-            log.info("Adding dataset:%d image:%s" % (did, iid))
-            if dname in seen and seen[dname] != did:
-                raise Exception("Duplicate datasets: '%s' = %s, %s" % (
-                    dname, seen[dname], did
-                ))
-            else:
-                seen[dname] = did
+            data = list()
+            while True:
+                parameters.page(len(data), 1000)
+                rv = unwrap(query_service.projection((
+                    'select distinct d, i '
+                    'from Project p '
+                    'join p.datasetLinks as pdl '
+                    'join pdl.child as d '
+                    'join d.imageLinks as l '
+                    'join l.child as i '
+                    'where p.id = :id order by i.id desc'),
+                    parameters, {'omero.group': '-1'}))
+                if len(rv) == 0:
+                    break
+                else:
+                    data.extend(rv)
+            if not data:
+                raise MetadataError('Could not find target object!')
 
-            ikey = (did, iname)
-            if ikey in seen and iid != seen[ikey]:
-                raise Exception("Duplicate image: '%s' = %s, %s (Dataset:%s)"
-                                % (iname, seen[ikey], iid, did))
-            else:
-                seen[ikey] = iid
+            seen = dict()
+            for dataset, image in data:
+                did = dataset.id.val
+                dname = dataset.name.val
+                iid = image.id.val
+                iname = image.name.val
+                log.info("Adding dataset:%d image:%s" % (did, iid))
+                if dname in seen and seen[dname] != did:
+                    raise Exception("Duplicate datasets: '%s' = %s, %s" % (
+                        dname, seen[dname], did
+                    ))
+                else:
+                    seen[dname] = did
 
-            self.images_by_id[did][iid] = image
-            self.images_by_name[did][iname] = image
-            self.datasets_by_id[did] = dataset
-            self.datasets_by_name[dname] = dataset
-        log.debug('Completed parsing project: %s' % self.target_object.id.val)
+                ikey = (did, iname)
+                if ikey in seen and iid != seen[ikey]:
+                    raise Exception("Duplicate image: '%s' = %s, %s (Dataset:%s)"
+                                    % (iname, seen[ikey], iid, did))
+                else:
+                    seen[ikey] = iid
+
+                self.images_by_id[did][iid] = image
+                self.images_by_name[did][iname] = image
+                self.datasets_by_id[did] = dataset
+                self.datasets_by_name[dname] = dataset
+            log.debug('Completed parsing project: %s' % target_object.id.val)
 
 
 class ParsingUtilFactory(object):
@@ -943,6 +960,7 @@ class ParsingContext(object):
         else:
             # or just a single object like DatasetI (with id set!)
             self.target_objects = [target_objects]
+            self.target_ids = [target_objects._id._val]
 
         self.file = file
         self.column_types = column_types
@@ -1459,7 +1477,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     Processor for creating MapAnnotations from BulkAnnotations.
     """
 
-    def __init__(self, client, target_objects, file=None, fileid=None,
+    def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=10, dry_run=False):
         """
@@ -1478,10 +1496,8 @@ class BulkToMapAnnotationContext(_QueryContext):
         if file and not fileid:
             raise MetadataError('file not supported for %s' % type(self))
 
-        assert len(target_objects) == 0
-
         # Reload object to get .details
-        self.target_object = self.get_target(target_objects[0])
+        self.target_object = self.get_target(target_object)
         if fileid:
             self.ofileid = fileid
         else:
@@ -1792,7 +1808,7 @@ class DeleteMapAnnotationContext(_QueryContext):
     on these types: Image WellSample Well PlateAcquisition Plate Screen
     """
 
-    def __init__(self, client, target_objects, file=None, fileid=None,
+    def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=500, dry_run=False):
 
@@ -1806,9 +1822,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         """
         super(DeleteMapAnnotationContext, self).__init__(client)
 
-        assert len(target_objects) == 0
-
-        self.target_object = target_objects[0]
+        self.target_object = target_object
         self.attach = attach
 
         if cfg or cfgid:
