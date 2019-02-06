@@ -622,8 +622,9 @@ class ScreenWrapper(SPWWrapper):
                 'where s.id = :id'), parameters, {'omero.group': '-1'})
             if target_object is None:
                 raise MetadataError('Could not find target object!')
-            self.target_names[target_object.id.val] = unwrap(target_object.getName())
-            
+            self.target_names[target_object.id.val] =\
+                unwrap(target_object.getName())
+
             images_by_id = dict()
             self.images_by_id[target_object.id.val] = images_by_id
             for plate in (l.child for l in target_object.copyPlateLinks()):
@@ -697,8 +698,8 @@ class PlateWrapper(SPWWrapper):
                 'where p.id = :id'), parameters, {'omero.group': '-1'})
             if target_object is None:
                 raise MetadataError('Could not find target object!')
-            self.target_names[target_object.id.val] = unwrap(target_object.getName())
-            
+            self.target_names[target_object.id.val] =\
+                unwrap(target_object.getName())
             wells_by_location = dict()
             wells_by_id = dict()
             images_by_id = dict()
@@ -853,8 +854,8 @@ class ProjectWrapper(PDIWrapper):
 
                 ikey = (did, iname)
                 if ikey in seen and iid != seen[ikey]:
-                    raise Exception("Duplicate image: '%s' = %s, %s (Dataset:%s)"
-                                    % (iname, seen[ikey], iid, did))
+                    raise Exception("Duplicate image: '%s' = %s, %s\
+                        (Dataset:%s)" % (iname, seen[ikey], iid, did))
                 else:
                     seen[ikey] = iid
 
