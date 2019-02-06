@@ -369,21 +369,22 @@ class MetadataControl(BaseControl):
 
     def original(self, args):
         "Print the original metadata in ini format"
-        md = self._load(args)
-        try:
-            source, global_om, series_om = md.get_original()
-        except AttributeError:
-            self.ctx.die(100, 'Failed to get original metadata for %s' %
-                         md.get_name())
+        mds = self._load(args)
+        for md in mds:
+            try:
+                source, global_om, series_om = md.get_original()
+            except AttributeError:
+                self.ctx.die(100, 'Failed to get original metadata for %s' %
+                             md.get_name())
 
-        om = (("Global", global_om),
-              ("Series", series_om))
+            om = (("Global", global_om),
+                  ("Series", series_om))
 
-        for name, tuples in om:
-            # Matches the OMERO4 original_metadata.txt format
-            self.ctx.out("[%sMetadata]" % name)
-            for k, v in tuples:
-                self.ctx.out("%s=%s" % (k, v))
+            for name, tuples in om:
+                # Matches the OMERO4 original_metadata.txt format
+                self.ctx.out("[%sMetadata]" % name)
+                for k, v in tuples:
+                    self.ctx.out("%s=%s" % (k, v))
 
     def _output_ann(self, mdobj, func, parents, indent):
         try:
@@ -407,22 +408,24 @@ class MetadataControl(BaseControl):
     def bulkanns(self, args):
         ("Provide a list of the NSBULKANNOTATION tables linked "
          "to the given object")
-        md = self._load(args)
-        indent = None
-        if args.report:
-            indent = 0
-        self._output_ann(
-            md, lambda md: md.get_bulkanns(), args.parents, indent)
+        mds = self._load(args)
+        for md in mds:
+            indent = None
+            if args.report:
+                indent = 0
+            self._output_ann(
+                md, lambda md: md.get_bulkanns(), args.parents, indent)
 
     def measures(self, args):
         ("Provide a list of the NSMEASUREMENT tables linked "
          "to the given object")
-        md = self._load(args)
-        indent = None
-        if args.report:
-            indent = 0
-        self._output_ann(
-            md, lambda md: md.get_measures(), args.parents, indent)
+        mds = self._load(args)
+        for md in mds:
+            indent = None
+            if args.report:
+                indent = 0
+            self._output_ann(
+                md, lambda md: md.get_measures(), args.parents, indent)
 
     def mapanns(self, args):
         "Provide a list of all MapAnnotations linked to the given object"
@@ -432,11 +435,12 @@ class MetadataControl(BaseControl):
                     continue
                 yield a
 
-        md = self._load(args)
-        indent = None
-        if args.report:
-            indent = 0
-        self._output_ann(md, get_anns, args.parents, indent)
+        mds = self._load(args)
+        for md in mds:
+            indent = None
+            if args.report:
+                indent = 0
+            self._output_ann(md, get_anns, args.parents, indent)
 
     def allanns(self, args):
         "Provide a list of all annotations linked to the given object"
@@ -446,11 +450,12 @@ class MetadataControl(BaseControl):
                     continue
                 yield a
 
-        md = self._load(args)
-        indent = None
-        if args.report:
-            indent = 0
-        self._output_ann(md, get_anns, args.parents, indent)
+        mds = self._load(args)
+        for md in mds:
+            indent = None
+            if args.report:
+                indent = 0
+            self._output_ann(md, get_anns, args.parents, indent)
 
     def testtables(self, args):
         "Tests whether tables can be created and initialized"
@@ -621,36 +626,39 @@ class MetadataControl(BaseControl):
         md = self._load(args)
         client, conn = self._clientconn(args)
 
-        if md.get_type() == "Screen":
+        objtype = md[0].get_type()
+        ids = [obj.get_id() for obj in md]
+
+        if objtype == "Screen":
             q = """SELECT pix FROM Pixels pix, WellSample ws, Plate p,
                    ScreenPlateLink spl WHERE
                    spl.child=p AND pix.image=ws.image AND ws.well.plate=p AND
-                   spl.parent.id=:id"""
-        elif md.get_type() == "Plate":
+                   spl.parent.id in (:ids)"""
+        elif objtype == "Plate":
             q = """SELECT pix FROM Pixels pix, WellSample ws WHERE
-                   pix.image=ws.image AND ws.well.plate.id=:id"""
-        elif md.get_type() == "PlateAcquisition":
+                   pix.image=ws.image AND ws.well.plate.id in (:ids)"""
+        elif objtype == "PlateAcquisition":
             q = """SELECT pix FROM Pixels pix, WellSample ws WHERE
-                   pix.image=ws.image AND ws.plateAcquisition.id=:id"""
-        elif md.get_type() == "Well":
+                   pix.image=ws.image AND ws.plateAcquisition.id in (:ids)"""
+        elif objtype == "Well":
             q = """SELECT pix FROM Pixels pix, WellSample ws WHERE
-                   pix.image=ws.image AND ws.well.id=:id"""
-        elif md.get_type() == "Project":
+                   pix.image=ws.image AND ws.well.id in (:ids)"""
+        elif objtype == "Project":
             q = """SELECT pix FROM Pixels pix, DatasetImageLink dil,
                    ProjectDatasetLink pdl WHERE dil.child=pix.image AND
-                   dil.parent=pdl.child AND pdl.parent.id=:id"""
-        elif md.get_type() == "Dataset":
+                   dil.parent=pdl.child AND pdl.parent.id in (:ids)"""
+        elif objtype == "Dataset":
             q = """SELECT pix FROM Pixels pix, DatasetImageLink dil WHERE
-                   dil.child=pix.image AND dil.parent.id=:id"""
-        elif md.get_type() == "Image":
-            q = """SELECT pix FROM Pixels pix WHERE pix.image.id=:id"""
+                   dil.child=pix.image AND dil.parent.id in (:ids)"""
+        elif objtype == "Image":
+            q = """SELECT pix FROM Pixels pix WHERE pix.image.id in (:ids)"""
         else:
-            raise Exception("Not implemented for type %s" % md.get_type())
+            raise Exception("Not implemented for type %s" % objtype)
 
         ctx = {'omero.group': '-1'}
 
         params = omero.sys.ParametersI()
-        params.addId(md.get_id())
+        params.addIds(ids)
         pixels = conn.getQueryService().findAllByQuery(q, params, ctx)
 
         if not pixels:
