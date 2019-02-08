@@ -1478,7 +1478,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     Processor for creating MapAnnotations from BulkAnnotations.
     """
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    def __init__(self, client, target_objects, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=10, dry_run=False):
         """
@@ -1498,7 +1498,7 @@ class BulkToMapAnnotationContext(_QueryContext):
             raise MetadataError('file not supported for %s' % type(self))
 
         # Reload object to get .details
-        self.target_object = self.get_target(target_object)
+        self.target_objects = [self.get_target(target_object) for target_object in target_objects]
         if fileid:
             self.ofileid = fileid
         else:
@@ -1563,10 +1563,11 @@ class BulkToMapAnnotationContext(_QueryContext):
                        target_object.id.val)
 
     def get_bulk_annotation_file(self):
-        otype = self.target_object.ice_staticId().split('::')[-1]
+        otype = self.target_objects[0].ice_staticId().split('::')[-1]
         q = """SELECT child.file.id FROM %sAnnotationLink link
-               WHERE parent.id=:id AND child.ns=:ns ORDER by id""" % otype
-        r = self.projection(q, unwrap(self.target_object.getId()),
+               WHERE parent.id in (:ids) AND child.ns=:ns ORDER by id""" % otype
+        ids = [obj.getId() for obj in self.target_objects]
+        r = self.projection(q, ids,
                             omero.constants.namespaces.NSBULKANNOTATIONS)
         if r:
             return r[-1]
@@ -1631,7 +1632,7 @@ class BulkToMapAnnotationContext(_QueryContext):
         See `_create_map_annotation_links`
         """
         sf = self.client.getSession()
-        group = str(self.target_object.details.group.id)
+        group = str(self.target_objects[0].details.group.id)
         update_service = sf.getUpdateService()
         arr = update_service.saveAndReturnArray(links, {'omero.group': group})
         return arr
@@ -1647,7 +1648,7 @@ class BulkToMapAnnotationContext(_QueryContext):
         See `_create_map_annotation_links`
         """
         sf = self.client.getSession()
-        group = str(self.target_object.details.group.id)
+        group = str(self.target_objects[0].details.group.id)
         update_service = sf.getUpdateService()
 
         annobj = update_service.saveAndReturnObject(ann)
@@ -1809,13 +1810,13 @@ class DeleteMapAnnotationContext(_QueryContext):
     on these types: Image WellSample Well PlateAcquisition Plate Screen
     """
 
-    def __init__(self, client, target_object, file=None, fileid=None,
+    def __init__(self, client, target_objects, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=500, dry_run=False):
 
         """
         :param client: OMERO client object
-        :param target_object: The object to be processed
+        :param target_objects: The objects to be processed
         :param file, fileid: Ignored
         :param cfg, cfgid: Configuration file
         :param attach: Delete all attached config files (recursive,
@@ -1823,7 +1824,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         """
         super(DeleteMapAnnotationContext, self).__init__(client)
 
-        self.target_object = target_object
+        self.target_objects = target_objects
         self.attach = attach
 
         if cfg or cfgid:
@@ -1900,115 +1901,115 @@ class DeleteMapAnnotationContext(_QueryContext):
             "Project": None,
         }
 
-        target = self.target_object
-        ids = [unwrap(target.getId())]
-
-        if isinstance(target, ScreenI):
-            q = ("SELECT child.id FROM ScreenPlateLink "
-                 "WHERE parent.id in (:ids)")
-            parentids["Screen"] = ids
-        if parentids["Screen"]:
-            parentids["Plate"] = self.projection(q, parentids["Screen"])
-
-        if isinstance(target, PlateI):
-            parentids["Plate"] = ids
-        if parentids["Plate"]:
-            q = "SELECT id FROM PlateAcquisition WHERE plate.id IN (:ids)"
-            parentids["PlateAcquisition"] = self.projection(
-                q, parentids["Plate"])
-            q = "SELECT id FROM Well WHERE plate.id IN (:ids)"
-            parentids["Well"] = self.projection(q, parentids["Plate"])
-
-        if isinstance(target, PlateAcquisitionI):
-            parentids["PlateAcquisition"] = ids
-        if parentids["PlateAcquisition"] and not isinstance(target, PlateI):
-            # WellSamples are linked to PlateAcqs and Plates, so only get
-            # if they haven't been obtained via a Plate
-            # Also note that we do not get Wells if the parent is a
-            # PlateAcquisition since this only refers to the fields in
-            # the well
-            q = "SELECT id FROM WellSample WHERE plateAcquisition.id IN (:ids)"
-            parentids["WellSample"] = self.projection(
-                q, parentids["PlateAcquisition"])
-
-        if isinstance(target, WellI):
-            parentids["Well"] = ids
-        if parentids["Well"]:
-            q = "SELECT id FROM WellSample WHERE well.id IN (:ids)"
-            parentids["WellSample"] = self.projection(
-                q, parentids["Well"], batch_size=10000)
-
-        if isinstance(target, WellSampleI):
-            parentids["WellSample"] = ids
-        if parentids["WellSample"]:
-            q = "SELECT image.id FROM WellSample WHERE id IN (:ids)"
-            parentids["Image"] = self.projection(
-                q, parentids["WellSample"], batch_size=10000)
-
-        if isinstance(target, ProjectI):
-            parentids["Project"] = ids
-        if parentids["Project"]:
-            q = ("SELECT ds.id FROM ProjectDatasetLink link "
-                 "join link.parent prj "
-                 "join link.child as ds WHERE prj.id IN (:ids)")
-            parentids["Dataset"] = self.projection(q, parentids["Project"])
-
-        if isinstance(target, DatasetI):
-            parentids["Dataset"] = ids
-        if parentids["Dataset"]:
-            q = ("SELECT i.id FROM DatasetImageLink link "
-                 "join link.parent ds "
-                 "join link.child as i WHERE ds.id IN (:ids)")
-            parentids["Image"] = self.projection(q, parentids["Dataset"])
-
-        if isinstance(target, ImageI):
-            parentids["Image"] = ids
-
-        # TODO: This should really include:
-        #    raise Exception("Unknown target: %s" % target.__class__.__name__)
-
-        log.debug("Parent IDs: %s",
-                  ["%s:%s" % (k, v is not None and len(v) or "NA")
-                   for k, v in parentids.items()])
-
         self.mapannids = dict()
         self.fileannids = set()
         not_annotatable = ('WellSample',)
 
-        # Currently deleting AnnotationLinks should automatically delete
-        # orphaned MapAnnotations:
-        # https://github.com/openmicroscopy/openmicroscopy/pull/4907
-        # Note this may change in future:
-        # https://trello.com/c/Gnoi9mTM/141-never-delete-orphaned-map-annotations
-        nss = self._get_configured_namespaces()
-        for objtype, objids in parentids.iteritems():
-            if objtype in not_annotatable:
-                continue
-            r = self._get_annotations_for_deletion(
-                objtype, objids, 'MapAnnotation', nss, getlink=True)
-            if r:
-                try:
-                    self.mapannids[objtype].update(r)
-                except KeyError:
-                    self.mapannids[objtype] = set(r)
+        for target in self.target_objects:
+            ids = [unwrap(target.getId())]
 
-        log.info("Total MapAnnotationLinks in %s: %d",
-                 nss, sum(len(v) for v in self.mapannids.values()))
-        log.debug("MapAnnotationLinks in %s: %s", nss, self.mapannids)
+            if isinstance(target, ScreenI):
+                q = ("SELECT child.id FROM ScreenPlateLink "
+                     "WHERE parent.id in (:ids)")
+                parentids["Screen"] = ids
+            if parentids["Screen"]:
+                parentids["Plate"] = self.projection(q, parentids["Screen"])
 
-        if self.attach and NSBULKANNOTATIONSCONFIG in nss:
+            if isinstance(target, PlateI):
+                parentids["Plate"] = ids
+            if parentids["Plate"]:
+                q = "SELECT id FROM PlateAcquisition WHERE plate.id IN (:ids)"
+                parentids["PlateAcquisition"] = self.projection(
+                    q, parentids["Plate"])
+                q = "SELECT id FROM Well WHERE plate.id IN (:ids)"
+                parentids["Well"] = self.projection(q, parentids["Plate"])
+
+            if isinstance(target, PlateAcquisitionI):
+                parentids["PlateAcquisition"] = ids
+            if parentids["PlateAcquisition"] and not isinstance(target, PlateI):
+                # WellSamples are linked to PlateAcqs and Plates, so only get
+                # if they haven't been obtained via a Plate
+                # Also note that we do not get Wells if the parent is a
+                # PlateAcquisition since this only refers to the fields in
+                # the well
+                q = "SELECT id FROM WellSample WHERE plateAcquisition.id IN (:ids)"
+                parentids["WellSample"] = self.projection(
+                    q, parentids["PlateAcquisition"])
+
+            if isinstance(target, WellI):
+                parentids["Well"] = ids
+            if parentids["Well"]:
+                q = "SELECT id FROM WellSample WHERE well.id IN (:ids)"
+                parentids["WellSample"] = self.projection(
+                    q, parentids["Well"], batch_size=10000)
+
+            if isinstance(target, WellSampleI):
+                parentids["WellSample"] = ids
+            if parentids["WellSample"]:
+                q = "SELECT image.id FROM WellSample WHERE id IN (:ids)"
+                parentids["Image"] = self.projection(
+                    q, parentids["WellSample"], batch_size=10000)
+
+            if isinstance(target, ProjectI):
+                parentids["Project"] = ids
+            if parentids["Project"]:
+                q = ("SELECT ds.id FROM ProjectDatasetLink link "
+                     "join link.parent prj "
+                     "join link.child as ds WHERE prj.id IN (:ids)")
+                parentids["Dataset"] = self.projection(q, parentids["Project"])
+
+            if isinstance(target, DatasetI):
+                parentids["Dataset"] = ids
+            if parentids["Dataset"]:
+                q = ("SELECT i.id FROM DatasetImageLink link "
+                     "join link.parent ds "
+                     "join link.child as i WHERE ds.id IN (:ids)")
+                parentids["Image"] = self.projection(q, parentids["Dataset"])
+
+            if isinstance(target, ImageI):
+                parentids["Image"] = ids
+
+            # TODO: This should really include:
+            #    raise Exception("Unknown target: %s" % target.__class__.__name__)
+
+            log.debug("Parent IDs: %s",
+                      ["%s:%s" % (k, v is not None and len(v) or "NA")
+                       for k, v in parentids.items()])
+
+            # Currently deleting AnnotationLinks should automatically delete
+            # orphaned MapAnnotations:
+            # https://github.com/openmicroscopy/openmicroscopy/pull/4907
+            # Note this may change in future:
+            # https://trello.com/c/Gnoi9mTM/141-never-delete-orphaned-map-annotations
+            nss = self._get_configured_namespaces()
             for objtype, objids in parentids.iteritems():
                 if objtype in not_annotatable:
                     continue
                 r = self._get_annotations_for_deletion(
-                    objtype, objids, 'FileAnnotation',
-                    [NSBULKANNOTATIONSCONFIG])
-                self.fileannids.update(r)
+                    objtype, objids, 'MapAnnotation', nss, getlink=True)
+                if r:
+                    try:
+                        self.mapannids[objtype].update(r)
+                    except KeyError:
+                        self.mapannids[objtype] = set(r)
 
-            log.info("Total FileAnnotations in %s: %d",
-                     [NSBULKANNOTATIONSCONFIG], len(set(self.fileannids)))
-            log.debug("FileAnnotations in %s: %s",
-                      [NSBULKANNOTATIONSCONFIG], self.fileannids)
+            log.info("Total MapAnnotationLinks in %s: %d",
+                     nss, sum(len(v) for v in self.mapannids.values()))
+            log.debug("MapAnnotationLinks in %s: %s", nss, self.mapannids)
+
+            if self.attach and NSBULKANNOTATIONSCONFIG in nss:
+                for objtype, objids in parentids.iteritems():
+                    if objtype in not_annotatable:
+                        continue
+                    r = self._get_annotations_for_deletion(
+                        objtype, objids, 'FileAnnotation',
+                        [NSBULKANNOTATIONSCONFIG])
+                    self.fileannids.update(r)
+
+                log.info("Total FileAnnotations in %s: %d",
+                         [NSBULKANNOTATIONSCONFIG], len(set(self.fileannids)))
+                log.debug("FileAnnotations in %s: %s",
+                          [NSBULKANNOTATIONSCONFIG], self.fileannids)
 
     def write_to_omero(self):
         for objtype, maids in self.mapannids.iteritems():
