@@ -213,7 +213,7 @@ class Screen2Plates(Fixture):
     def get_target(self):
         if not self.screen:
             self.screen = self.create_screen(self.row_count, self.col_count)
-        return self.screen
+        return [self.screen]
 
     def get_annotations(self):
         query = """select s from Screen s
@@ -249,7 +249,7 @@ class Plate2Wells(Fixture):
     def get_target(self):
         if not self.plate:
             self.plate = self.create_plate(self.row_count, self.col_count)
-        return self.plate
+        return [self.plate]
 
     def get_annotations(self):
         query = """select p from Plate p
@@ -662,7 +662,7 @@ class Dataset2Images(Fixture):
         if not self.dataset:
             self.dataset = self.create_dataset(self.names)
             self.images = self.get_dataset_images()
-        return self.dataset
+        return [self.dataset]
 
     def get_dataset_images(self):
         if not self.dataset:
@@ -805,7 +805,7 @@ class Project2Datasets(Fixture):
         if not self.project:
             self.project = self.create_project("P123")
             self.images = self.get_project_images()
-        return self.project
+        return [self.project]
 
     def get_project_images(self):
         if not self.project:
@@ -1234,7 +1234,7 @@ class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
     def _init_fixture_attach_cfg(self):
         fixture = Plate2Wells()
         fixture.init(self)
-        target = fixture.get_target()
+        target = fixture.get_target()[0]
         ofile = self.client.upload(fixture.get_cfg()).proxy()
         link = PlateAnnotationLinkI()
         link.parent = target.proxy()
@@ -1420,7 +1420,7 @@ class ROICSV(Fixture):
         if not self.plate:
             self.plate = self.create_plate(
                 self.row_count, self.col_count)
-        return self.plate
+        return [self.plate]
 
 
 @pythonminver
@@ -1434,7 +1434,7 @@ class TestPopulateRois(ITest):
 
         fixture = ROICSV()
         fixture.init(self)
-        plate = fixture.get_target()
+        plate = fixture.get_target()[0]
 
         # As opposed to the ParsingContext, here we are expected
         # to link the file ourselves
