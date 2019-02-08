@@ -900,6 +900,45 @@ class ParsingUtilFactory(object):
             return self.get_generic_filter()
 
 
+def resolve_objects(objects):
+    """ Objects can have a variety of specifications:
+    - A tuple like (Dataset, [1,2,3])
+    - A list of objects like DatasetI (with ids set!)
+    - Or just a single object like DatasetI (with id set!)
+    This method makes sure that all of them are resolved into
+    a tuple comprising a list of IObjects and list of their Ids.
+
+    Arguments:
+    objects -- The objects
+
+    Return:
+    Tuple of IObjects list and Ids list
+    """
+    if isinstance(objects, tuple):
+        # a tuple like (Dataset, [1,2,3])
+        resolved_objects = []
+        resolved_ids = objects[1]
+        for oid in objects[1]:
+            if objects[0] == 'Dataset':
+                resolved_objects.append(DatasetI(long(oid), False))
+            elif objects[0] == 'Project':
+                resolved_objects.append(ProjectI(long(oid), False))
+            elif objects[0] == 'Screen':
+                resolved_objects.append(ScreenI(long(oid), False))
+            elif objects[0] == 'Plate':
+                resolved_objects.append(PlateI(long(oid), False))
+    elif isinstance(objects, list):
+        # a list of objects like DatasetI (with ids set!)
+        resolved_objects = objects
+        resolved_ids = [obj._id._val for obj in objects]
+    else:
+        # or just a single object like DatasetI (with id set!)
+        resolved_objects = [objects]
+        resolved_ids = [objects._id._val]
+
+    return (resolved_objects, resolved_ids)
+
+
 class ParsingContext(object):
     """Generic parsing context for CSV files.
 
@@ -941,27 +980,7 @@ class ParsingContext(object):
         self.client = client
 
         # target_objects can have a variety of specifications
-        if isinstance(target_objects, tuple):
-            # a tuple like (Dataset, [1,2,3])
-            self.target_objects = []
-            self.target_ids = target_objects[1]
-            for oid in target_objects[1]:
-                if target_objects[0] == 'Dataset':
-                    self.target_objects.append(DatasetI(long(oid), False))
-                elif target_objects[0] == 'Project':
-                    self.target_objects.append(ProjectI(long(oid), False))
-                elif target_objects[0] == 'Screen':
-                    self.target_objects.append(ScreenI(long(oid), False))
-                elif target_objects[0] == 'Plate':
-                    self.target_objects.append(PlateI(long(oid), False))
-        elif isinstance(target_objects, list):
-            # a list of objects like DatasetI (with ids set!)
-            self.target_objects = target_objects
-            self.target_ids = [obj._id._val for obj in target_objects]
-        else:
-            # or just a single object like DatasetI (with id set!)
-            self.target_objects = [target_objects]
-            self.target_ids = [target_objects._id._val]
+        self.target_objects, self.target_ids = resolve_objects(target_objects)
 
         self.file = file
         self.column_types = column_types
@@ -1497,8 +1516,12 @@ class BulkToMapAnnotationContext(_QueryContext):
         if file and not fileid:
             raise MetadataError('file not supported for %s' % type(self))
 
+        # target_objects can have a variety of specifications
+        self.target_objects, self.target_ids = resolve_objects(target_objects)
+
         # Reload object to get .details
-        self.target_objects = [self.get_target(target_object) for target_object in target_objects]
+        self.target_objects = [self.get_target(target_object)
+                               for target_object in self.target_objects]
         if fileid:
             self.ofileid = fileid
         else:
@@ -1565,7 +1588,8 @@ class BulkToMapAnnotationContext(_QueryContext):
     def get_bulk_annotation_file(self):
         otype = self.target_objects[0].ice_staticId().split('::')[-1]
         q = """SELECT child.file.id FROM %sAnnotationLink link
-               WHERE parent.id in (:ids) AND child.ns=:ns ORDER by id""" % otype
+               WHERE parent.id in (:ids) AND child.ns=:ns
+               ORDER by id""" % otype
         ids = [obj.getId() for obj in self.target_objects]
         r = self.projection(q, ids,
                             omero.constants.namespaces.NSBULKANNOTATIONS)
@@ -1824,7 +1848,9 @@ class DeleteMapAnnotationContext(_QueryContext):
         """
         super(DeleteMapAnnotationContext, self).__init__(client)
 
-        self.target_objects = target_objects
+        # target_objects can have a variety of specifications
+        self.target_objects, self.target_ids = resolve_objects(target_objects)
+
         self.attach = attach
 
         if cfg or cfgid:
@@ -1906,7 +1932,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         not_annotatable = ('WellSample',)
 
         for target in self.target_objects:
-            ids = [unwrap(target.getId())]
+            ids = [target.getId()]
 
             if isinstance(target, ScreenI):
                 q = ("SELECT child.id FROM ScreenPlateLink "
@@ -1926,13 +1952,15 @@ class DeleteMapAnnotationContext(_QueryContext):
 
             if isinstance(target, PlateAcquisitionI):
                 parentids["PlateAcquisition"] = ids
-            if parentids["PlateAcquisition"] and not isinstance(target, PlateI):
+            if parentids["PlateAcquisition"] and not isinstance(target,
+                                                                PlateI):
                 # WellSamples are linked to PlateAcqs and Plates, so only get
                 # if they haven't been obtained via a Plate
                 # Also note that we do not get Wells if the parent is a
                 # PlateAcquisition since this only refers to the fields in
                 # the well
-                q = "SELECT id FROM WellSample WHERE plateAcquisition.id IN (:ids)"
+                q = "SELECT id FROM WellSample WHERE\
+                     plateAcquisition.id IN (:ids)"
                 parentids["WellSample"] = self.projection(
                     q, parentids["PlateAcquisition"])
 
@@ -1968,9 +1996,6 @@ class DeleteMapAnnotationContext(_QueryContext):
 
             if isinstance(target, ImageI):
                 parentids["Image"] = ids
-
-            # TODO: This should really include:
-            #    raise Exception("Unknown target: %s" % target.__class__.__name__)
 
             log.debug("Parent IDs: %s",
                       ["%s:%s" % (k, v is not None and len(v) or "NA")
