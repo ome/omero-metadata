@@ -1029,7 +1029,7 @@ class ParsingContext(object):
             self.columns[target_object.id.val] = header_resolver\
                 .create_columns()
             log.debug('Columns: %r' % self.columns)
-            if len(self.columns) > MAX_COLUMN_COUNT:
+            if len(self.columns[target_object.id.val]) > MAX_COLUMN_COUNT:
                 log.warn("Column count exceeds max column count")
 
         self.preprocess_data(reader)
