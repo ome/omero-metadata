@@ -96,7 +96,11 @@ url = "https://github.com/ome/omero-metadata/"
 
 setup(
     version=version,
-    packages=['', 'omero.plugins'],
+    packages=[
+        '',
+        'omero.plugins',
+        'omero_metadata',
+    ],
     package_dir={"": "src"},
     name='omero-metadata',
     description="Metadata plugin for use in the OMERO CLI.",
