@@ -14,6 +14,7 @@ import pytest
 from omero_metadata import (
     mask_from_binary_image,
     masks_from_label_image,
+    NoMaskFound,
 )
 
 
@@ -85,6 +86,42 @@ class TestMaskUtils(object):
             assert unwrap(mask.getY()) == expected[i][3]
 
             assert np.array_equal(mask.getBytes(), expected[i][4])
+
+            if args:
+                assert unwrap(mask.getTheZ()) == 1
+                assert unwrap(mask.getTheC()) == 2
+                assert unwrap(mask.getTheT()) == 3
+                assert unwrap(mask.getTextValue()) == 'test'
+            else:
+                assert unwrap(mask.getTheZ()) is None
+                assert unwrap(mask.getTheC()) is None
+                assert unwrap(mask.getTheT()) is None
+                assert unwrap(mask.getTextValue()) is None
+
+    @pytest.mark.parametrize('args', [
+        {},
+        {'rgba': (255, 128, 64, 128), 'z': 1, 'c': 2, 't': 3, 'text': 'test'}
+    ])
+    @pytest.mark.parametrize('raise_on_no_mask', [
+        True,
+        False,
+    ])
+    def test_empty_mask_from_binary_image(self, args, raise_on_no_mask):
+        empty_binary_image = np.array([[0]])
+        if raise_on_no_mask:
+            with pytest.raises(NoMaskFound):
+                mask = mask_from_binary_image(
+                    empty_binary_image, raise_on_no_mask=raise_on_no_mask,
+                    **args)
+        else:
+            mask = mask_from_binary_image(
+                empty_binary_image, raise_on_no_mask=raise_on_no_mask,
+                **args)
+            assert unwrap(mask.getWidth()) == 0
+            assert unwrap(mask.getHeight()) == 0
+            assert unwrap(mask.getX()) == 0
+            assert unwrap(mask.getY()) == 0
+            assert np.array_equal(mask.getBytes(), [])
 
             if args:
                 assert unwrap(mask.getTheZ()) == 1
