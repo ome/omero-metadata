@@ -51,6 +51,8 @@ class TestMaskUtils(object):
         assert unwrap(mask.getX()) == 1
         assert unwrap(mask.getY()) == 1
 
+        assert np.array_equal(mask.getBytes(), np.array([224], dtype=np.uint8))
+
         if args:
             assert unwrap(mask.getTheZ()) == 1
             assert unwrap(mask.getTheC()) == 2
@@ -68,18 +70,21 @@ class TestMaskUtils(object):
     ])
     def test_masks_from_label_image(self, label_image, args):
         masks = masks_from_label_image(label_image, **args)
-        expected_whxy = (
-            (2, 2, 1, 1),
-            (2, 3, 2, 0),
+        expected = (
+            # w, h, x, y, bytes
+            (2, 2, 1, 1, np.array([224], dtype=np.uint8)),
+            (2, 3, 2, 0, np.array([72], dtype=np.uint8)),
         )
 
         assert len(masks) == 2
 
         for i, mask in enumerate(masks):
-            assert unwrap(mask.getWidth()) == expected_whxy[i][0]
-            assert unwrap(mask.getHeight()) == expected_whxy[i][1]
-            assert unwrap(mask.getX()) == expected_whxy[i][2]
-            assert unwrap(mask.getY()) == expected_whxy[i][3]
+            assert unwrap(mask.getWidth()) == expected[i][0]
+            assert unwrap(mask.getHeight()) == expected[i][1]
+            assert unwrap(mask.getX()) == expected[i][2]
+            assert unwrap(mask.getY()) == expected[i][3]
+
+            assert np.array_equal(mask.getBytes(), expected[i][4])
 
             if args:
                 assert unwrap(mask.getTheZ()) == 1
