@@ -38,7 +38,7 @@ def mask_from_binary_image(
     """
     Create a mask shape from a binary image (background=0)
     :param numpy.array binim: Binary 2D array, must contain values [0, 1] only
-    :param rgba int-4-tuple: Optional (reg, green, blue, alpha) colour
+    :param rgba int-4-tuple: Optional (red, green, blue, alpha) colour
     :param z: Optional Z-index for the mask
     :param c: Optional C-index for the mask
     :param t: Optional T-index for the mask
@@ -101,7 +101,7 @@ def masks_from_label_image(
     """
     Create mask shapes from a label image (background=0)
     :param numpy.array labelim: 2D label array
-    :param rgba int-4-tuple: Optional (reg, green, blue, alpha) colour
+    :param rgba int-4-tuple: Optional (red, green, blue, alpha) colour
     :param z: Optional Z-index for the mask
     :param c: Optional C-index for the mask
     :param t: Optional T-index for the mask
