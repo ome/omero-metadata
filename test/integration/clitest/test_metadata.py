@@ -25,7 +25,7 @@ import omero
 import omero.gateway
 from omero.constants.namespaces import NSBULKANNOTATIONS, NSMEASUREMENT
 from omero.gateway import BlitzGateway
-from omero_cli_metadata import Metadata, MetadataControl
+from omero_metadata.cli import Metadata, MetadataControl
 from omero.rtypes import rdouble, unwrap
 from omero.testlib.cli import CLITest
 from omero.model.enums import UnitsLength
