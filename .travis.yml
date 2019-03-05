@@ -15,3 +15,10 @@ before_install:
 
 script:
   - .omero/cli-docker
+
+deploy:
+  provider: pypi
+  user: $PYPI_USER
+  password: $PYPI_PASSWORD
+  on:
+    tags: true
