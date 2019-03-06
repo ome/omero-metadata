@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.3.1
+-----
+
+* Allow to filter CSV annotation file and populate only a Dataset or a Plate
+
 0.3.0
 -----
 
