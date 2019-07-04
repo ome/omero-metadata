@@ -91,7 +91,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.3.1.dev0'
+version = '0.3.2.dev1'
 url = "https://github.com/ome/omero-metadata/"
 
 setup(
