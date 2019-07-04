@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.4.0
+-----
+
+* Rename imports to omero_metadata.{cli,populate}
+* Handle change in table closing semantics
+
 0.3.1
 -----
 
