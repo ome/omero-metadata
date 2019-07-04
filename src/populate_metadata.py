@@ -960,8 +960,12 @@ class ParsingContext(object):
             filter_header_index, self.value_resolver.wrapper.target_name)
 
         table = self.create_table()
-        self.populate_from_reader(reader, self.filter_function, table, 1000)
-        self.create_file_annotation(table)
+        try:
+            self.populate_from_reader(reader,
+                                      self.filter_function, table, 1000)
+            self.create_file_annotation(table)
+        finally:
+            table.close()
 
         log.debug('Column widths: %r' % self.get_column_widths())
         log.debug('Columns: %r' % [
@@ -1063,6 +1067,9 @@ class ParsingContext(object):
                              filter_function,
                              table,
                              batch_size=1000):
+        """
+        Caller is responsible for closing the table instance.
+        """
         row_count = 0
         for (r, row) in enumerate(reader):
             log.debug('Row %d', r)
@@ -1080,9 +1087,11 @@ class ParsingContext(object):
             log.debug(self.columns)
             self.post_process()
             table.addData(self.columns)
-        table.close()
 
     def create_file_annotation(self, table):
+        """
+        Caller is responsible for closing the table instance.
+        """
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         update_service = sf.getUpdateService()
