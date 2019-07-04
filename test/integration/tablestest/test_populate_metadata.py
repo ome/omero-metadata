@@ -29,7 +29,7 @@ import os
 
 from omero.model import PlateI, WellI, WellSampleI, OriginalFileI
 from omero.rtypes import rint, rstring, unwrap
-from populate_metadata import ParsingContext
+from omero_metadata.populate import ParsingContext
 from omero.constants.namespaces import NSBULKANNOTATIONS
 
 

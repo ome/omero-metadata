@@ -57,7 +57,7 @@ from omero import client
 from omero.util.populate_roi import ThreadPool
 
 
-log = logging.getLogger("omero.util.populate_metadata")
+log = logging.getLogger("omero_metadata.populate")
 
 
 def usage(error):

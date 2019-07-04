@@ -91,12 +91,12 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.3.2.dev1'
+version = '0.4.0'
 url = "https://github.com/ome/omero-metadata/"
 
 setup(
     version=version,
-    packages=['', 'omero.plugins'],
+    packages=['', 'omero_metadata', 'omero.plugins'],
     package_dir={"": "src"},
     name='omero-metadata',
     description="Metadata plugin for use in the OMERO CLI.",

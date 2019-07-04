@@ -19,7 +19,7 @@ from omero.cli import BaseControl
 from omero.cli import ProxyStringType
 from omero.constants import namespaces
 from omero.gateway import BlitzGateway
-import populate_metadata
+import omero_metadata.populate
 from omero.util import populate_roi, pydict_text_io
 from omero.util.metadata_utils import NSBULKANNOTATIONSCONFIG
 from omero.util.metadata_utils import NSBULKANNOTATIONSRAW
@@ -129,9 +129,9 @@ class Metadata(object):
 class MetadataControl(BaseControl):
 
     POPULATE_CONTEXTS = (
-        ("csv", populate_metadata.ParsingContext),
-        ("bulkmap", populate_metadata.BulkToMapAnnotationContext),
-        ("deletemap", populate_metadata.DeleteMapAnnotationContext),
+        ("csv", omero_metadata.populate.ParsingContext),
+        ("bulkmap", omero_metadata.populate.BulkToMapAnnotationContext),
+        ("deletemap", omero_metadata.populate.DeleteMapAnnotationContext),
     )
 
     def _configure(self, parser):
@@ -446,9 +446,9 @@ class MetadataControl(BaseControl):
         client, conn = self._clientconn(args)
         # TODO: Configure logging properly
         if args.report:
-            populate_metadata.log.setLevel(logging.DEBUG)
+            omero_metadata.populate.log.setLevel(logging.DEBUG)
         else:
-            populate_metadata.log.setLevel(logging.INFO)
+            omero_metadata.populate.log.setLevel(logging.INFO)
 
         context_class = dict(self.POPULATE_CONTEXTS)[args.context]
 

@@ -10,7 +10,7 @@
 
 import sys
 from omero.cli import CLI
-from omero_cli_metadata import MetadataControl, HELP
+from omero_metadata.cli import MetadataControl, HELP
 try:
     register("metadata", MetadataControl, HELP)
 except NameError:
