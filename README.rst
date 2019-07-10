@@ -70,49 +70,28 @@ or as an OriginalFile in OMERO with ``--fileid 123``.
 
 If you wish to ensure that ``number`` columns are created for numerical data, this will
 allow you to make numerical queries on the table.
-Column Types are::
+Column Types are:
 
-    'plate': PlateColumn, 'well': WellColumn, 'image': ImageColumn,
-    'dataset': DatasetColumn, 'roi': RoiColumn, 'd': DoubleColumn, 'l': LongColumn,
-    's': StringColumn, 'b': BoolColumn
+- 'plate', 'well', 'image', 'dataset', 'roi' to specify objects
+- 'd': DoubleColumn, for floating point numbers
+- 'l': LongColumn, for integer numbers
+- 's': StringColumn, for text
+- 'b': BoolColumn, for true/false
 
 These can be specified in the first row of a ``CSV`` with a ``# header`` tag (see examples below).
+The ``# header`` row is optional. Default column type is ``String``.
 
 NB: Column names should not contain whitespace if you want to be able to query
 by these columns.
 
 Examples:
 
-To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``::
+To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
+and ``Image Name``:
 
-    $ bin/omero metadata populate Plate:1 path/to/screen.csv
+    $ bin/omero metadata populate Project:1 path/to/project.csv
 
-screen.csv::
-
-    # header well,plate,s,d,l,d
-    Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
-    A1,plate01,DMSO,10.1,10,25.4
-    A2,plate01,DMSO,0.1,1000,2.54
-    A3,plate01,DMSO,5.5,550,4
-    B1,plate01,DrugX,12.3,50,44.43
-
-This will create an OMERO.table linked to the Screen like this:
-
-===== ====== ====== ============== =========== ================ =========== ===========
-Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plate Name
-===== ====== ====== ============== =========== ================ =========== ===========
-9154  3855   DMSO   10.1           10          25.4             a1          plate01
-9155  3855   DMSO   0.1            1000        2.54             a2          plate01
-9156  3855   DMSO   5.5            550         4.0              a3          plate01
-9157  3855   DrugX  12.3           50          44.43            b1          plate01
-===== ====== ====== ============== =========== ================ =========== ===========
-
-If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
-
-To add a table to a Project, the ``CSV`` file needs to specify ``Dataset``
-and ``Image``.
-
-For example::
+project.csv::
 
     # header s,s,d,l,s
     Image Name,Dataset Name,Bounding_Box,Channel_Index,Channel_Name
@@ -133,6 +112,33 @@ img-04.png dataset01    0.429        4             Cy5          36641
 ========== ============ ============ ============= ============ =====
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
+
+To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
+If a ```# header``` is specified, column types must be ``well`` and ``plate``.
+
+screen.csv::
+
+    # header well,plate,s,d,l,d
+    Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
+    A1,plate01,DMSO,10.1,10,25.4
+    A2,plate01,DMSO,0.1,1000,2.54
+    A3,plate01,DMSO,5.5,550,4
+    B1,plate01,DrugX,12.3,50,44.43
+
+This will create an OMERO.table linked to the Screen, with the
+```Well Name``` and ```Plate Name``` columns added and the ```Well``` and
+```Plate``` columns used for IDs:
+
+===== ====== ====== ============== =========== ================ =========== ===========
+Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plate Name
+===== ====== ====== ============== =========== ================ =========== ===========
+9154  3855   DMSO   10.1           10          25.4             a1          plate01
+9155  3855   DMSO   0.1            1000        2.54             a2          plate01
+9156  3855   DMSO   5.5            550         4.0              a3          plate01
+9157  3855   DrugX  12.3           50          44.43            b1          plate01
+===== ====== ====== ============== =========== ================ =========== ===========
+
+If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
 License
 -------
