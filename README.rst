@@ -94,23 +94,18 @@ screen.csv::
     A1,plate01,DMSO,10.1,10,25.4
     A2,plate01,DMSO,0.1,1000,2.54
     A3,plate01,DMSO,5.5,550,4
-    B1,plate01,Monastrol,12.3,50,44.43
-    B2,plate01,Drug3,1.1,1,15.4
-    B3,plate01,Water,20.1,44,12.3
+    B1,plate01,DrugX,12.3,50,44.43
 
 This will create an OMERO.table linked to the Screen like this:
 
-===== ====== ====== ==============  =========== ===============  =========  ===========
-Well  Plate   Drug  Concentration   Cell_Count  Percent_Mitotic  Well Name  Plate Name 
-===== ====== ====== ==============  =========== ===============  =========  ===========
- 9154  3855    DMSO  10.1                    10  25.4                   a1   plate01
- 9155  3855    DMSO  0.1                   1000  2.54                   a2   plate01
- 9156  3855    DMSO  5.5                    550  4.0                    a3   plate01
- 9157  3855    Monastrol   12.3              50  44.43                  b1   plate01
- 9158  3855    Drug3       1.1                1  15.4                   b2   plate01
- 9159  3855    Water  20.1                   44  12.3                   b3   plate01
-===== ====== ====== ==============  =========== ===============  =========  ===========
-
+===== ====== ====== ============== =========== ================ =========== ===========
+Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plate Name
+===== ====== ====== ============== =========== ================ =========== ===========
+9154  3855   DMSO   10.1           10          25.4             a1          plate01
+9155  3855   DMSO   0.1            1000        2.54             a2          plate01
+9156  3855   DMSO   5.5            550         4.0              a3          plate01
+9157  3855   DrugX  12.3           50          44.43            b1          plate01
+===== ====== ====== ============== =========== ================ =========== ===========
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
@@ -126,13 +121,16 @@ For example::
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
 
-This will create an OMERO.table linked to the Project like this::
+This will create an OMERO.table linked to the Project like this:
 
-    Image Name	Dataset Name	Bounding_Box	Channel_Index	Channel_Name	Image
-    img-01.png	dataset01	    0.0469	        1	            DAPI	        36638
-    img-02.png	dataset01	    0.142	        2	            GFP	            36639
-    img-03.png	dataset01	    0.093	        3	            TRITC	        36640
-    img-04.png	dataset01	    0.429	        4	            Cy5	            36641
+========== ============ ============ ============= ============ =====
+Image Name Dataset Name Bounding_Box Channel_Index Channel_Name Image
+========== ============ ============ ============= ============ =====
+img-01.png dataset01    0.0469       1             DAPI         36638
+img-02.png dataset01    0.142        2             GFP          36639
+img-03.png dataset01    0.093        3             TRITC        36640
+img-04.png dataset01    0.429        4             Cy5          36641
+========== ============ ============ ============= ============ =====
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
 
