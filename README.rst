@@ -98,15 +98,16 @@ screen.csv::
     B2,plate01,Drug3,1.1,1,15.4
     B3,plate01,Water,20.1,44,12.3
 
-This will create an OMERO.table linked to the Screen like this::
+This will create an OMERO.table linked to the Screen like this:
 
-    Well	Plate	Drug	Concentration	Cell_Count	Percent_Mitotic	Well Name	Plate Name
-    9154	3855	DMSO	10.1	        10	        25.4	        a1	        plate01
-    9155	3855	DMSO	0.1	            1000	    2.54	        a2	        plate01
-    9156	3855	DMSO	5.5	            550	        4.0	            a3	        plate01
-    9157	3855	Monastrol	12.3	    50	        44.43	        b1	        plate01
-    9158	3855	Drug3	1.1	            1	        15.4	        b2	        plate01
-    9159	3855	Water	20.1	        44	        12.3	        b3	        plate01
+Well | Plate  | Drug | Concentration  | Cell_Count | Percent_Mitotic | Well Name | Plate Name
+---- | ------ | -----|--------------- | ---------- | -------------- | ---------- | ----------
+9154 | 3855   | DMSO | 10.1           |         10 | 25.4           |         a1 |  plate01
+9155 | 3855   | DMSO | 0.1            |       1000 | 2.54           |         a2 |  plate01
+9156 | 3855   | DMSO | 5.5            |        550 | 4.0            |         a3 |  plate01
+9157 | 3855   | Monastrol |  12.3     |         50 | 44.43          |         b1 |  plate01
+9158 | 3855   | Drug3 |           1.1 |          1 | 15.4           |         b2 |  plate01
+9159 | 3855   | Water | 20.1          |         44 | 12.3           |         b3 |  plate01
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
