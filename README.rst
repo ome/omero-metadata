@@ -40,8 +40,8 @@ The plugin is called from the command-line using the `omero` command::
     $ bin/omero metadata <subcommand>
 
 Help for each command can be shown using the ``-h`` flag.
-Objects can be specified as arguments in the format ```Class:ID```, such
-as ```Project:123```.
+Objects can be specified as arguments in the format ``Class:ID``, such
+as ``Project:123``.
 
 Available subcommands are:
 
@@ -72,11 +72,11 @@ If you wish to ensure that ``number`` columns are created for numerical data, th
 allow you to make numerical queries on the table.
 Column Types are:
 
-- 'plate', 'well', 'image', 'dataset', 'roi' to specify objects
-- 'd': DoubleColumn, for floating point numbers
-- 'l': LongColumn, for integer numbers
-- 's': StringColumn, for text
-- 'b': BoolColumn, for true/false
+- ``d``: ``DoubleColumn``, for floating point numbers
+- ``l``: ``LongColumn``, for integer numbers
+- ``s``: ``StringColumn``, for text
+- ``b``: ``BoolColumn``, for true/false
+- ``plate``, ``well``, ``image``, ``dataset``, ``roi`` to specify objects
 
 These can be specified in the first row of a ``CSV`` with a ``# header`` tag (see examples below).
 The ``# header`` row is optional. Default column type is ``String``.
@@ -87,7 +87,7 @@ by these columns.
 Examples:
 
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
-and ``Image Name``:
+and ``Image Name``::
 
     $ bin/omero metadata populate Project:1 path/to/project.csv
 
@@ -114,7 +114,7 @@ img-04.png dataset01    0.429        4             Cy5          36641
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
 
 To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
-If a ```# header``` is specified, column types must be ``well`` and ``plate``.
+If a ``# header`` is specified, column types must be ``well`` and ``plate``.
 
 screen.csv::
 
@@ -126,8 +126,8 @@ screen.csv::
     B1,plate01,DrugX,12.3,50,44.43
 
 This will create an OMERO.table linked to the Screen, with the
-```Well Name``` and ```Plate Name``` columns added and the ```Well``` and
-```Plate``` columns used for IDs:
+``Well Name`` and ``Plate Name`` columns added and the ``Well`` and
+``Plate`` columns used for IDs:
 
 ===== ====== ====== ============== =========== ================ =========== ===========
 Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plate Name
