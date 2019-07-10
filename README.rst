@@ -37,7 +37,7 @@ Usage
 
 The plugin is called from the command-line using the `omero` command::
 
-    $ bin/omero metadata &lt;subcommand&gt;
+    $ bin/omero metadata <subcommand>
 
 Help for each command can be shown using the ``-h`` flag.
 Objects can be specified as arguments in the format ```Class:ID```, such
@@ -45,17 +45,17 @@ as ```Project:123```.
 
 Available subcommands are:
 
- - ``allanns``: Provide a list of all annotations linked to the given object
- - ``bulkanns``: Provide a list of the NSBULKANNOTATION tables linked to the given object
- - ``mapanns``: Provide a list of all MapAnnotations linked to the given object
- - ``measures``: Provide a list of the NSMEASUREMENT tables linked to the given object
- - ``original``: Print the original metadata in ini format
- - ``pixelsize``: Set physical pixel size
- - ``populate``: Add metadata (bulk-annotations) to an object (see below)
- - ``populateroi``: Add ROIs to an object
- - ``rois``: Manage ROIs
- - ``summary``: Provide a general summary of available metadata
- - ``testtables``: Tests whether tables can be created and initialized
+- ``allanns``: Provide a list of all annotations linked to the given object
+- ``bulkanns``: Provide a list of the NSBULKANNOTATION tables linked to the given object
+- ``mapanns``: Provide a list of all MapAnnotations linked to the given object
+- ``measures``: Provide a list of the NSMEASUREMENT tables linked to the given object
+- ``original``: Print the original metadata in ini format
+- ``pixelsize``: Set physical pixel size
+- ``populate``: Add metadata (bulk-annotations) to an object (see below)
+- ``populateroi``: Add ROIs to an object
+- ``rois``: Manage ROIs
+- ``summary``: Provide a general summary of available metadata
+- ``testtables``: Tests whether tables can be created and initialized
 
 populate
 --------
@@ -65,7 +65,7 @@ the table as a ``File Annotation`` to a parent container such as Screen, Plate, 
 or Dataset. It also attempts to convert Image or Well names from the ``CSV`` into
 Image or Well IDs in the ``OMERO.table``.
 
-The ```CSV``` file can be provided as local file with ``--file path/to/file.csv``
+The ``CSV`` file can be provided as local file with ``--file path/to/file.csv``
 or as an OriginalFile in OMERO with ``--fileid 123``.
 
 If you wish to ensure that ``number`` columns are created for numerical data, this will
@@ -76,14 +76,14 @@ Column Types are::
     'dataset': DatasetColumn, 'roi': RoiColumn, 'd': DoubleColumn, 'l': LongColumn,
     's': StringColumn, 'b': BoolColumn
 
-These can be specified in the first row of a ``CSV`` with a ``# header`` tag.
+These can be specified in the first row of a ``CSV`` with a ``# header`` tag (see examples below).
 
 NB: Column names should not contain whitespace if you want to be able to query
 by these columns.
 
 Examples:
 
-To add a table to a Screen, the ``CSV`` file needs to specify ``Plate Name`` and ``Well``::
+To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``::
 
     $ bin/omero metadata populate Plate:1 path/to/screen.csv
 
