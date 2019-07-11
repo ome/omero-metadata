@@ -152,4 +152,4 @@ licensed under the terms of the GNU General Public License (GPL) v2 or later.
 Copyright
 ---------
 
-2018, The Open Microscopy Environment
+2018-2019, The Open Microscopy Environment
