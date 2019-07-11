@@ -7,7 +7,8 @@
 OMERO metadata plugin
 =====================
 
-Plugin for use in the OMERO CLI.
+Plugin for use in the OMERO CLI. Provides tools for bulk
+management of annotations on objects in OMERO.
 
 Requirements
 ============
@@ -43,6 +44,9 @@ Help for each command can be shown using the ``-h`` flag.
 Objects can be specified as arguments in the format ``Class:ID``, such
 as ``Project:123``.
 
+Bulk-annotations are HDF-based tables with the NSBULKANNOTATION
+namespace, sometimes referred to as OMERO.tables.
+
 Available subcommands are:
 
 - ``allanns``: Provide a list of all annotations linked to the given object
@@ -52,7 +56,6 @@ Available subcommands are:
 - ``original``: Print the original metadata in ini format
 - ``pixelsize``: Set physical pixel size
 - ``populate``: Add metadata (bulk-annotations) to an object (see below)
-- ``populateroi``: Add ROIs to an object
 - ``rois``: Manage ROIs
 - ``summary``: Provide a general summary of available metadata
 - ``testtables``: Tests whether tables can be created and initialized
@@ -81,7 +84,7 @@ Column Types are:
 These can be specified in the first row of a ``CSV`` with a ``# header`` tag (see examples below).
 The ``# header`` row is optional. Default column type is ``String``.
 
-NB: Column names should not contain whitespace if you want to be able to query
+NB: Column names should not contain spaces if you want to be able to query
 by these columns.
 
 Examples:
@@ -94,7 +97,7 @@ and ``Image Name``::
 project.csv::
 
     # header s,s,d,l,s
-    Image Name,Dataset Name,Bounding_Box,Channel_Index,Channel_Name
+    Image Name,Dataset Name,ROI_Area,Channel_Index,Channel_Name
     img-01.png,dataset01,0.0469,1,DAPI
     img-02.png,dataset01,0.142,2,GFP
     img-03.png,dataset01,0.093,3,TRITC
@@ -102,14 +105,14 @@ project.csv::
 
 This will create an OMERO.table linked to the Project like this:
 
-========== ============ ============ ============= ============ =====
-Image Name Dataset Name Bounding_Box Channel_Index Channel_Name Image
-========== ============ ============ ============= ============ =====
-img-01.png dataset01    0.0469       1             DAPI         36638
-img-02.png dataset01    0.142        2             GFP          36639
-img-03.png dataset01    0.093        3             TRITC        36640
-img-04.png dataset01    0.429        4             Cy5          36641
-========== ============ ============ ============= ============ =====
+========== ============ ======== ============= ============ =====
+Image Name Dataset Name ROI_Area Channel_Index Channel_Name Image
+========== ============ ======== ============= ============ =====
+img-01.png dataset01    0.0469   1             DAPI         36638
+img-02.png dataset01    0.142    2             GFP          36639
+img-03.png dataset01    0.093    3             TRITC        36640
+img-04.png dataset01    0.429    4             Cy5          36641
+========== ============ ======== ============= ============ =====
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
 
