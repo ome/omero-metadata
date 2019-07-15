@@ -912,13 +912,13 @@ class ParsingContext(object):
 
     def preprocess_from_handle(self, data):
         reader = csv.reader(data, delimiter=',')
-        first_row = [h.strip() for h in reader.next()]
+        first_row = reader.next()
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
         header_index = 0
         if first_row_is_types:
             header_index = 1
-            header_row = [h.strip() for h in reader.next()]
+            header_row = reader.next()
         log.debug('Header: %r' % header_row)
         for h in first_row:
             if not h:
@@ -939,11 +939,11 @@ class ParsingContext(object):
 
     def parse_from_handle_stream(self, data):
         reader = csv.reader(data, delimiter=',')
-        first_row = [h.strip() for h in reader.next()]
+        first_row = reader.next()
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
         if first_row_is_types:
-            header_row = [h.strip() for h in reader.next()]
+            header_row = reader.next()
 
         filter_header_index = -1
         for i, name in enumerate(header_row):
@@ -1005,7 +1005,7 @@ class ParsingContext(object):
             if column.name not in ADDED_COLUMN_NAMES:
                 column_count += 1
         for i, row in enumerate(reader):
-            row = [(self.columns[i], value.strip()) for i, value in enumerate(row)]
+            row = [(self.columns[i], value) for i, value in enumerate(row)]
             for column, original_value in row:
                 log.debug('Original value %s, %s',
                           original_value, column.name)
@@ -1072,7 +1072,6 @@ class ParsingContext(object):
         """
         row_count = 0
         for (r, row) in enumerate(reader):
-            row = [d.strip() for d in row]
             log.debug('Row %d', r)
             if filter_function(row):
                 self.populate_row(row)
