@@ -1169,7 +1169,7 @@ class ParsingContext(object):
                     )
                 well_name_column.size = max(well_name_column.size, len(v))
                 well_name_column.values.append(v)
-            else:
+            elif (ScreenI is target_class or PlateI is target_class):
                 log.info('Missing well name column, skipping.')
 
             if image_name_column is not None and (
@@ -1242,7 +1242,7 @@ class ParsingContext(object):
                 v = self.value_resolver.get_plate_name_by_id(plate)
                 plate_name_column.size = max(plate_name_column.size, len(v))
                 plate_name_column.values.append(v)
-            else:
+            elif (ScreenI is target_class or PlateI is target_class):
                 log.info('Missing plate name column, skipping.')
 
 
