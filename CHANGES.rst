@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.4.1
+-----
+
+* Expand README to describe the usage of the populate command
+* Remove Well/Plate warnings when populating a Project/Dataset
+
 0.4.0
 -----
 
