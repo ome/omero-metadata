@@ -2,8 +2,6 @@
 language: python
 sudo: required
 
-env: PLUGIN=metadata
-
 services:
   - docker
 
