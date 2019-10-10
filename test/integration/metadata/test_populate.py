@@ -919,8 +919,8 @@ class TestPopulateMetadataHelper(ITest):
         rows = t.getNumberOfRows()
         fixture.assert_rows(rows)
         for hit in range(rows):
-            row_values = [col.values[0] for col in t.read(list(range(len(cols))),
-                                                          hit, hit+1).columns]
+            row_values = [col.values[0] for col in t.read(
+                list(range(len(cols))), hit, hit+1).columns]
             assert len(row_values) == fixture.count
             # Unsure where the lower-casing is happening
             if "A1" in row_values or "a1" in row_values:
@@ -1037,7 +1037,8 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
         fixture.assert_rows(rows)
-        data = [c.values for c in t.read(list(range(len(cols))), 0, rows).columns]
+        data = [c.values for c in t.read(
+            list(range(len(cols))), 0, rows).columns]
         row_values = list(zip(*data))
         assert len(row_values) == fixture.count
         fixture.assert_row_values(row_values)
@@ -1279,7 +1280,7 @@ class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
 class MockMeasurementCtx(AbstractMeasurementCtx):
 
     def well_name_to_number(self, well):
-        m = re.match("(?P<COL>[a-z]+)(?P<ROW>\d+)",
+        m = re.match(r'(?P<COL>[a-z]+)(?P<ROW>\d+)',
                      well, re.IGNORECASE)
         if not m:
             raise Exception("Bad well: %s" % well)

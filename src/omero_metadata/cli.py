@@ -11,7 +11,6 @@ from __future__ import division
 
 from builtins import str
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import logging
 import mimetypes
@@ -486,7 +485,7 @@ class MetadataControl(BaseControl):
         wait = args.wait
         if wait:
             ms = 5000
-            loops = int(old_div((wait * 1000), ms)) + 1
+            loops = int(wait * 1000 / ms) + 1
 
         # Note some contexts only support a subset of these args
         ctx = context_class(client, args.obj, file=args.file, fileid=fileid,

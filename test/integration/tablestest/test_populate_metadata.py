@@ -108,8 +108,8 @@ class TestPopulateMetadata(ITest):
         rows = t.getNumberOfRows()
         assert rows == row_count * col_count
         for hit in range(rows):
-            row_values = [col.values[0] for col in t.read(list(range(len(cols))),
-                                                          hit, hit+1).columns]
+            row_values = [col.values[0] for col in t.read(
+                list(range(len(cols))), hit, hit+1).columns]
             assert len(row_values) == 4
             if "a1" in row_values:
                 assert "Control" in row_values

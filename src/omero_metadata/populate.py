@@ -541,37 +541,37 @@ class SPWWrapper(ValueWrapper):
             log.debug('%s: %r' % (row, list(wells_by_location[row].keys())))
 
     def resolve_well(self, column, row, value):
-            m = self.WELL_REGEX.match(value)
-            if m is None or len(m.groups()) != 2:
-                msg = 'Cannot parse well identifier "%s" from row: %r'
-                msg = msg % (value, [o[1] for o in row])
-                raise MetadataError(msg)
-            plate_row = m.group(1).lower()
-            plate_column = str(int(m.group(2)))
-            wells_by_location = None
-            if len(self.wells_by_location) == 1:
-                wells_by_location = list(self.wells_by_location.values())[0]
-                log.debug(
-                    'Parsed "%s" row: %s column: %s' % (
-                        value, plate_row, plate_column))
-            else:
-                for column, plate in row:
-                    if column.__class__ is PlateColumn:
-                        wells_by_location = self.wells_by_location[plate]
-                        log.debug(
-                            'Parsed "%s" row: %s column: %s plate: %s' % (
-                                value, plate_row, plate_column, plate))
-                        break
-            if wells_by_location is None:
-                raise MetadataError(
-                    'Unable to locate Plate column in Row: %r' % row
-                )
-            try:
-                return wells_by_location[plate_row][plate_column].id.val
-            except KeyError:
-                log.debug('Row: %s Column: %s not found!' % (
-                    plate_row, plate_column))
-                return -1
+        m = self.WELL_REGEX.match(value)
+        if m is None or len(m.groups()) != 2:
+            msg = 'Cannot parse well identifier "%s" from row: %r'
+            msg = msg % (value, [o[1] for o in row])
+            raise MetadataError(msg)
+        plate_row = m.group(1).lower()
+        plate_column = str(int(m.group(2)))
+        wells_by_location = None
+        if len(self.wells_by_location) == 1:
+            wells_by_location = list(self.wells_by_location.values())[0]
+            log.debug(
+                'Parsed "%s" row: %s column: %s' % (
+                    value, plate_row, plate_column))
+        else:
+            for column, plate in row:
+                if column.__class__ is PlateColumn:
+                    wells_by_location = self.wells_by_location[plate]
+                    log.debug(
+                        'Parsed "%s" row: %s column: %s plate: %s' % (
+                            value, plate_row, plate_column, plate))
+                    break
+        if wells_by_location is None:
+            raise MetadataError(
+                'Unable to locate Plate column in Row: %r' % row
+            )
+        try:
+            return wells_by_location[plate_row][plate_column].id.val
+        except KeyError:
+            log.debug('Row: %s Column: %s not found!' % (
+                plate_row, plate_column))
+            return -1
 
 
 class ScreenWrapper(SPWWrapper):
@@ -1573,7 +1573,7 @@ class BulkToMapAnnotationContext(_QueryContext):
 
     def populate(self, table):
         def idcolumn_to_omeroclass(col):
-            clsname = re.search('::(\w+)Column$', col.ice_staticId()).group(1)
+            clsname = re.search(r'::(\w+)Column$', col.ice_staticId()).group(1)
             return clsname
 
         try:
@@ -1961,9 +1961,8 @@ def parse_column_types(column_type_list):
 if __name__ == "__main__":
     try:
         options, args = getopt(sys.argv[1:], "s:p:u:w:k:c:id", ["columns="])
-    except GetoptError as xxx_todo_changeme:
-        (msg, opt) = xxx_todo_changeme.args
-        usage(msg)
+    except GetoptError as e:
+        usage(e.args[0])
 
     try:
         target_object, file = args
