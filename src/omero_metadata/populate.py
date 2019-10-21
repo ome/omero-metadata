@@ -27,6 +27,7 @@ from __future__ import print_function
 from builtins import chr
 from builtins import str
 from builtins import range
+from future.utils import native_str
 from past.builtins import basestring
 from builtins import object
 import logging
@@ -981,7 +982,8 @@ class ParsingContext(object):
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         sr = sf.sharedResources()
-        table = sr.newTable(1, DEFAULT_TABLE_NAME, {'omero.group': group})
+        table = sr.newTable(1, DEFAULT_TABLE_NAME,
+                            {'omero.group': native_str(group)})
         if table is None:
             raise MetadataError(
                 "Unable to create table: %s" % DEFAULT_TABLE_NAME)
