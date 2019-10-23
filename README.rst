@@ -68,8 +68,7 @@ the table as a ``File Annotation`` to a parent container such as Screen, Plate, 
 or Dataset. It also attempts to convert Image or Well names from the ``CSV`` into
 Image or Well IDs in the ``OMERO.table``.
 
-The ``CSV`` file can be provided as local file with ``--file path/to/file.csv``
-or as an OriginalFile in OMERO with ``--fileid 123``.
+The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
 If you wish to ensure that ``number`` columns are created for numerical data, this will
 allow you to make numerical queries on the table.
@@ -142,6 +141,15 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 ===== ====== ====== ============== =========== ================ =========== ===========
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
+
+Developer install
+=================
+
+This plugin can be installed from the source code with::
+
+    $ cd omero-metadata
+    $ pip install .
+
 
 License
 -------
