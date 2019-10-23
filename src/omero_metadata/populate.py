@@ -6,7 +6,7 @@ Populate bulk metadata tables from delimited text files.
 from __future__ import print_function
 
 #
-#  Copyright (C) 2011-2014 University of Dundee. All rights reserved.
+#  Copyright (C) 2011-2019 University of Dundee. All rights reserved.
 #
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -1023,7 +1023,7 @@ class ParsingContext(object):
                     break
                 try:
                     log.debug("Value's class: %s" % value.__class__)
-                    if value.__class__ is str:
+                    if isinstance(value, basestring):
                         column.size = max(column.size, len(value))
                     # The following are needed for
                     # getting post process column sizes
@@ -1113,7 +1113,7 @@ class ParsingContext(object):
         link = self.create_annotation_link()
         link.parent = self.target_object
         link.child = file_annotation
-        update_service.saveObject(link, {'omero.group': group})
+        update_service.saveObject(link, {'omero.group': native_str(group)})
 
     def populate(self, rows):
         nrows = len(rows)
@@ -1521,7 +1521,8 @@ class BulkToMapAnnotationContext(_QueryContext):
         sf = self.client.getSession()
         group = str(self.target_object.details.group.id)
         update_service = sf.getUpdateService()
-        arr = update_service.saveAndReturnArray(links, {'omero.group': group})
+        arr = update_service.saveAndReturnArray(
+            links, {'omero.group': native_str(group)})
         return arr
 
     def _save_annotation_and_links(self, links, ann, batch_size):
@@ -1546,7 +1547,7 @@ class BulkToMapAnnotationContext(_QueryContext):
             for link in batch:
                 link.setChild(annobj)
             update_service.saveArray(
-                batch, {'omero.group': group})
+                batch, {'omero.group': native_str(group)})
             sz += len(batch)
         return sz
 
@@ -1576,7 +1577,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     def populate(self, table):
         def idcolumn_to_omeroclass(col):
             clsname = re.search(r'::(\w+)Column$', col.ice_staticId()).group(1)
-            return clsname
+            return str(clsname)
 
         try:
             ignore_missing_primary_key = self.advanced_cfgs[
@@ -1613,7 +1614,7 @@ class BulkToMapAnnotationContext(_QueryContext):
                     # Be aware this has implications for client UIs, since
                     # Wells and Images may be treated as one when it comes
                     # to annotations
-                    obj = (omerotype, row[n])
+                    obj = (omerotype, int(row[n]))
                     targets.append(obj)
                     targets.extend(self._get_additional_targets(obj))
                 else:
