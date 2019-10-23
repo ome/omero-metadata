@@ -30,6 +30,7 @@ class PyTest(test_command):
         ('test-ice-config=', 'i',
          "use specified 'ice config' file instead of default"),
         ('test-pythonpath=', 'p', "prepend 'pythonpath' to PYTHONPATH"),
+        ('test-string=', 'k', "only run tests matching 'string'"),
         ('test-marker=', 'm', "only run tests including 'marker'"),
         ('test-no-capture', 's', "don't suppress test output"),
         ('test-failfast', 'x', "Exit on first error"),
