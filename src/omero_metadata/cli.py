@@ -12,6 +12,7 @@ from __future__ import division
 from builtins import str
 from builtins import range
 from builtins import object
+from future.utils import native_str
 import logging
 import mimetypes
 import os
@@ -625,5 +626,5 @@ class MetadataControl(BaseControl):
                 pixel.setPhysicalSizeZ(omero.model.LengthI(args.z, unit))
 
         group_id = pixels[0].getDetails().getGroup().getId().getValue()
-        ctx = {'omero.group': str(group_id)}
+        ctx = {'omero.group': native_str(group_id)}
         conn.getUpdateService().saveArray(pixels, ctx)
