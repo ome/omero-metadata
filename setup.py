@@ -125,6 +125,7 @@ setup(
     cmdclass={'test': PyTest},
     install_requires=[
         'future',
+        'omero-py>=5.6.dev1'
     ],
     tests_require=['pytest'],
 )
