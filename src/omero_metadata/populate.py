@@ -994,11 +994,11 @@ class ParsingContext(object):
 
     def parse(self):
         if self.file.endswith(".gz"):
-            data_for_preprocessing = gzip.open(self.file, "rb")
-            data = gzip.open(self.file, "rb")
+            data_for_preprocessing = gzip.open(self.file, "rt")
+            data = gzip.open(self.file, "rt")
         else:
-            data_for_preprocessing = open(self.file, 'U')
-            data = open(self.file, 'U')
+            data_for_preprocessing = open(self.file, 'rt')
+            data = open(self.file, 'rt')
 
         try:
             self.preprocess_from_handle(data_for_preprocessing)
