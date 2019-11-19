@@ -126,6 +126,7 @@ setup(
     install_requires=[
         'future',
         'omero-py>=5.6.dev1',
+        'PyYAML'
     ],
     tests_require=[
         'pytest',
