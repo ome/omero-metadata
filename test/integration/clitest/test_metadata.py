@@ -43,7 +43,7 @@ class MetadataTestBase(CLITest):
 
         conn = BlitzGateway(client_obj=self.client)
         self.imageid = unwrap(self.image.getId())
-        assert isinstance(self.imageid, int)
+        assert isinstance(self.imageid, long)
         wrapper = conn.getObject("Image", self.imageid)
         self.md = Metadata(wrapper)
 
