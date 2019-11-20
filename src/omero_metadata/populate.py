@@ -3,9 +3,10 @@
 """
 Populate bulk metadata tables from delimited text files.
 """
+from __future__ import print_function
 
 #
-#  Copyright (C) 2011-2014 University of Dundee. All rights reserved.
+#  Copyright (C) 2011-2019 University of Dundee. All rights reserved.
 #
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -23,6 +24,12 @@ Populate bulk metadata tables from delimited text files.
 #
 
 
+from builtins import chr
+from builtins import str
+from builtins import range
+from future.utils import native_str
+from past.builtins import basestring
+from builtins import object
 import logging
 import gzip
 import sys
@@ -31,7 +38,7 @@ import re
 import json
 from getpass import getpass
 from getopt import getopt, GetoptError
-from itertools import izip
+
 from collections import defaultdict
 
 import omero.clients
@@ -63,7 +70,7 @@ log = logging.getLogger("omero_metadata.populate")
 def usage(error):
     """Prints usage so that we don't have to. :)"""
     cmd = sys.argv[0]
-    print """%s
+    print("""%s
 Usage: %s [options] <target_object> <file>
 Runs metadata population code for a given object.
 
@@ -84,7 +91,7 @@ Options:
 Examples:
   %s -s localhost -p 14064 -u bob --columns l,image,d,l Plate:6 metadata.csv
 
-Report bugs to ome-devel@lists.openmicroscopy.org.uk""" % (error, cmd, cmd)
+Report bugs to ome-devel@lists.openmicroscopy.org.uk""" % (error, cmd, cmd))
     sys.exit(2)
 
 
@@ -355,7 +362,7 @@ class ValueResolver(object):
         column_as_lower = column.name.lower()
         if ImageColumn is column_class:
             if len(self.wrapper.images_by_id) == 1:
-                images_by_id = self.wrapper.images_by_id.values()[0]
+                images_by_id = list(self.wrapper.images_by_id.values())[0]
             else:
                 for column, column_value in row:
                     if column.__class__ is PlateColumn:
@@ -396,10 +403,10 @@ class ValueResolver(object):
                     'Unable to locate Parent column in Row: %r' % row
                 )
             try:
-                return images_by_id[long(value)].id.val
+                return images_by_id[int(value)].id.val
             except KeyError:
                 log.debug('Image Id: %i not found!' % (value))
-                return -1L
+                return -1
             return
         if WellColumn is column_class:
             return self.wrapper.resolve_well(column, row, value)
@@ -412,13 +419,13 @@ class ValueResolver(object):
            and column_class is LongColumn:
             try:
                 # The value is not 0 offsetted
-                return long(value) - 1
+                return int(value) - 1
             except ValueError:
-                return long(self.AS_ALPHA.index(value.lower()))
+                return int(self.AS_ALPHA.index(value.lower()))
         if StringColumn is column_class:
             return value
         if LongColumn is column_class:
-            return long(value)
+            return int(value)
         if DoubleColumn is column_class:
             return float(value)
         if BoolColumn is column_class:
@@ -505,7 +512,7 @@ class SPWWrapper(ValueWrapper):
 
     def get_image_name_by_id(self, iid, pid=None):
         if not pid and len(self.images_by_id):
-            pid = self.images_by_id.keys()[0]
+            pid = list(self.images_by_id.keys())[0]
         else:
             raise Exception("Cannot resolve image to plate")
         return self.images_by_id[pid][iid].name.val
@@ -532,40 +539,40 @@ class SPWWrapper(ValueWrapper):
                 images_by_id[image.id.val] = image
         log.debug('Completed parsing plate: %s' % plate.name.val)
         for row in wells_by_location:
-            log.debug('%s: %r' % (row, wells_by_location[row].keys()))
+            log.debug('%s: %r' % (row, list(wells_by_location[row].keys())))
 
     def resolve_well(self, column, row, value):
-            m = self.WELL_REGEX.match(value)
-            if m is None or len(m.groups()) != 2:
-                msg = 'Cannot parse well identifier "%s" from row: %r'
-                msg = msg % (value, [o[1] for o in row])
-                raise MetadataError(msg)
-            plate_row = m.group(1).lower()
-            plate_column = str(long(m.group(2)))
-            wells_by_location = None
-            if len(self.wells_by_location) == 1:
-                wells_by_location = self.wells_by_location.values()[0]
-                log.debug(
-                    'Parsed "%s" row: %s column: %s' % (
-                        value, plate_row, plate_column))
-            else:
-                for column, plate in row:
-                    if column.__class__ is PlateColumn:
-                        wells_by_location = self.wells_by_location[plate]
-                        log.debug(
-                            'Parsed "%s" row: %s column: %s plate: %s' % (
-                                value, plate_row, plate_column, plate))
-                        break
-            if wells_by_location is None:
-                raise MetadataError(
-                    'Unable to locate Plate column in Row: %r' % row
-                )
-            try:
-                return wells_by_location[plate_row][plate_column].id.val
-            except KeyError:
-                log.debug('Row: %s Column: %s not found!' % (
-                    plate_row, plate_column))
-                return -1L
+        m = self.WELL_REGEX.match(value)
+        if m is None or len(m.groups()) != 2:
+            msg = 'Cannot parse well identifier "%s" from row: %r'
+            msg = msg % (value, [o[1] for o in row])
+            raise MetadataError(msg)
+        plate_row = m.group(1).lower()
+        plate_column = str(int(m.group(2)))
+        wells_by_location = None
+        if len(self.wells_by_location) == 1:
+            wells_by_location = list(self.wells_by_location.values())[0]
+            log.debug(
+                'Parsed "%s" row: %s column: %s' % (
+                    value, plate_row, plate_column))
+        else:
+            for column, plate in row:
+                if column.__class__ is PlateColumn:
+                    wells_by_location = self.wells_by_location[plate]
+                    log.debug(
+                        'Parsed "%s" row: %s column: %s plate: %s' % (
+                            value, plate_row, plate_column, plate))
+                    break
+        if wells_by_location is None:
+            raise MetadataError(
+                'Unable to locate Plate column in Row: %r' % row
+            )
+        try:
+            return wells_by_location[plate_row][plate_column].id.val
+        except KeyError:
+            log.debug('Row: %s Column: %s not found!' % (
+                plate_row, plate_column))
+            return -1
 
 
 class ScreenWrapper(SPWWrapper):
@@ -912,13 +919,13 @@ class ParsingContext(object):
 
     def preprocess_from_handle(self, data):
         reader = csv.reader(data, delimiter=',')
-        first_row = reader.next()
+        first_row = next(reader)
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
         header_index = 0
         if first_row_is_types:
             header_index = 1
-            header_row = reader.next()
+            header_row = next(reader)
         log.debug('Header: %r' % header_row)
         for h in first_row:
             if not h:
@@ -939,11 +946,11 @@ class ParsingContext(object):
 
     def parse_from_handle_stream(self, data):
         reader = csv.reader(data, delimiter=',')
-        first_row = reader.next()
+        first_row = next(reader)
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
         if first_row_is_types:
-            header_row = reader.next()
+            header_row = next(reader)
 
         filter_header_index = -1
         for i, name in enumerate(header_row):
@@ -975,7 +982,8 @@ class ParsingContext(object):
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         sr = sf.sharedResources()
-        table = sr.newTable(1, DEFAULT_TABLE_NAME, {'omero.group': group})
+        table = sr.newTable(1, DEFAULT_TABLE_NAME,
+                            {'omero.group': native_str(group)})
         if table is None:
             raise MetadataError(
                 "Unable to create table: %s" % DEFAULT_TABLE_NAME)
@@ -986,11 +994,11 @@ class ParsingContext(object):
 
     def parse(self):
         if self.file.endswith(".gz"):
-            data_for_preprocessing = gzip.open(self.file, "rb")
-            data = gzip.open(self.file, "rb")
+            data_for_preprocessing = gzip.open(self.file, "rt")
+            data = gzip.open(self.file, "rt")
         else:
-            data_for_preprocessing = open(self.file, 'U')
-            data = open(self.file, 'U')
+            data_for_preprocessing = open(self.file, 'rt')
+            data = open(self.file, 'rt')
 
         try:
             self.preprocess_from_handle(data_for_preprocessing)
@@ -1015,7 +1023,7 @@ class ParsingContext(object):
                     break
                 try:
                     log.debug("Value's class: %s" % value.__class__)
-                    if value.__class__ is str:
+                    if isinstance(value, basestring):
                         column.size = max(column.size, len(value))
                     # The following are needed for
                     # getting post process column sizes
@@ -1105,7 +1113,7 @@ class ParsingContext(object):
         link = self.create_annotation_link()
         link.parent = self.target_object
         link.child = file_annotation
-        update_service.saveObject(link, {'omero.group': group})
+        update_service.saveObject(link, {'omero.group': native_str(group)})
 
     def populate(self, rows):
         nrows = len(rows)
@@ -1259,7 +1267,7 @@ class _QueryContext(object):
         iterable `i`.
         """
         i = list(i)  # Copying list to handle sets and modifications
-        for batch in (i[pos:pos + sz] for pos in xrange(0, len(i), sz)):
+        for batch in (i[pos:pos + sz] for pos in range(0, len(i), sz)):
             yield batch
 
     def _grouped_batch(self, groups, sz=1000):
@@ -1513,7 +1521,8 @@ class BulkToMapAnnotationContext(_QueryContext):
         sf = self.client.getSession()
         group = str(self.target_object.details.group.id)
         update_service = sf.getUpdateService()
-        arr = update_service.saveAndReturnArray(links, {'omero.group': group})
+        arr = update_service.saveAndReturnArray(
+            links, {'omero.group': native_str(group)})
         return arr
 
     def _save_annotation_and_links(self, links, ann, batch_size):
@@ -1538,7 +1547,7 @@ class BulkToMapAnnotationContext(_QueryContext):
             for link in batch:
                 link.setChild(annobj)
             update_service.saveArray(
-                batch, {'omero.group': group})
+                batch, {'omero.group': native_str(group)})
             sz += len(batch)
         return sz
 
@@ -1567,8 +1576,8 @@ class BulkToMapAnnotationContext(_QueryContext):
 
     def populate(self, table):
         def idcolumn_to_omeroclass(col):
-            clsname = re.search('::(\w+)Column$', col.ice_staticId()).group(1)
-            return clsname
+            clsname = re.search(r'::(\w+)Column$', col.ice_staticId()).group(1)
+            return str(clsname)
 
         try:
             ignore_missing_primary_key = self.advanced_cfgs[
@@ -1577,13 +1586,13 @@ class BulkToMapAnnotationContext(_QueryContext):
             ignore_missing_primary_key = False
 
         nrows = table.getNumberOfRows()
-        data = table.readCoordinates(range(nrows))
+        data = table.readCoordinates(list(range(nrows)))
 
         # Don't create annotations on higher-level objects
         # idcoltypes = set(HeaderResolver.screen_keys.values())
         idcoltypes = set((ImageColumn, WellColumn))
         idcols = []
-        for n in xrange(len(data.columns)):
+        for n in range(len(data.columns)):
             col = data.columns[n]
             if col.__class__ in idcoltypes:
                 omeroclass = idcolumn_to_omeroclass(col)
@@ -1598,14 +1607,14 @@ class BulkToMapAnnotationContext(_QueryContext):
             trs = [KeyValueListPassThrough(headers)]
 
         selected_nss = self._get_selected_namespaces()
-        for row in izip(*(c.values for c in data.columns)):
+        for row in zip(*(c.values for c in data.columns)):
             targets = []
             for omerotype, n in idcols:
                 if row[n] > 0:
                     # Be aware this has implications for client UIs, since
                     # Wells and Images may be treated as one when it comes
                     # to annotations
-                    obj = (omerotype, row[n])
+                    obj = (omerotype, int(row[n]))
                     targets.append(obj)
                     targets.extend(self._get_additional_targets(obj))
                 else:
@@ -1848,7 +1857,7 @@ class DeleteMapAnnotationContext(_QueryContext):
 
         log.debug("Parent IDs: %s",
                   ["%s:%s" % (k, v is not None and len(v) or "NA")
-                   for k, v in parentids.items()])
+                   for k, v in list(parentids.items())])
 
         self.mapannids = dict()
         self.fileannids = set()
@@ -1860,7 +1869,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         # Note this may change in future:
         # https://trello.com/c/Gnoi9mTM/141-never-delete-orphaned-map-annotations
         nss = self._get_configured_namespaces()
-        for objtype, objids in parentids.iteritems():
+        for objtype, objids in parentids.items():
             if objtype in not_annotatable:
                 continue
             r = self._get_annotations_for_deletion(
@@ -1872,11 +1881,11 @@ class DeleteMapAnnotationContext(_QueryContext):
                     self.mapannids[objtype] = set(r)
 
         log.info("Total MapAnnotationLinks in %s: %d",
-                 nss, sum(len(v) for v in self.mapannids.values()))
+                 nss, sum(len(v) for v in list(self.mapannids.values())))
         log.debug("MapAnnotationLinks in %s: %s", nss, self.mapannids)
 
         if self.attach and NSBULKANNOTATIONSCONFIG in nss:
-            for objtype, objids in parentids.iteritems():
+            for objtype, objids in parentids.items():
                 if objtype in not_annotatable:
                     continue
                 r = self._get_annotations_for_deletion(
@@ -1890,7 +1899,7 @@ class DeleteMapAnnotationContext(_QueryContext):
                       [NSBULKANNOTATIONSCONFIG], self.fileannids)
 
     def write_to_omero(self):
-        for objtype, maids in self.mapannids.iteritems():
+        for objtype, maids in self.mapannids.items():
             for batch in self._batch(maids, sz=self.batch_size):
                 self._write_to_omero_batch(
                     {"%sAnnotationLink" % objtype: batch}, self.loops, self.ms)
@@ -1909,7 +1918,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         try:
             callback = self.client.submit(
                 del_cmd, loops=loops, ms=ms, failontimeout=True)
-        except CmdError, ce:
+        except CmdError as ce:
             log.error("Failed to delete: %s" % to_delete)
             raise Exception(ce.err)
 
@@ -1919,7 +1928,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         try:
             deleted = rsp.deletedObjects
             log.info("Deleted objects in %g s" % (time.time() - start))
-            for k, v in deleted.iteritems():
+            for k, v in deleted.items():
                 log.info("  %d %s", len(v), k)
                 log.debug("  %s %s", k, v)
         except AttributeError:
@@ -1929,13 +1938,13 @@ class DeleteMapAnnotationContext(_QueryContext):
 def parse_target_object(target_object):
     type, id = target_object.split(':')
     if 'Dataset' == type:
-        return DatasetI(long(id), False)
+        return DatasetI(int(id), False)
     if 'Project' == type:
-        return ProjectI(long(id), False)
+        return ProjectI(int(id), False)
     if 'Plate' == type:
-        return PlateI(long(id), False)
+        return PlateI(int(id), False)
     if 'Screen' == type:
-        return ScreenI(long(id), False)
+        return ScreenI(int(id), False)
     raise ValueError('Unsupported target object: %s' % target_object)
 
 
@@ -1947,7 +1956,7 @@ def parse_column_types(column_type_list):
         else:
             column_types = []
             message = "\nColumn type '%s' unknown.\nChoose from following: " \
-                "%s" % (column_type, ",".join(COLUMN_TYPES.keys()))
+                "%s" % (column_type, ",".join(list(COLUMN_TYPES.keys())))
             raise MetadataError(message)
     return column_types
 
@@ -1955,8 +1964,8 @@ def parse_column_types(column_type_list):
 if __name__ == "__main__":
     try:
         options, args = getopt(sys.argv[1:], "s:p:u:w:k:c:id", ["columns="])
-    except GetoptError, (msg, opt):
-        usage(msg)
+    except GetoptError as e:
+        usage(e.args[0])
 
     try:
         target_object, file = args

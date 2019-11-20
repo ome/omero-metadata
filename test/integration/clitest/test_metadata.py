@@ -20,6 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
+from past.builtins import long
 
 import omero
 import omero.gateway
@@ -42,7 +43,7 @@ class MetadataTestBase(CLITest):
 
         conn = BlitzGateway(client_obj=self.client)
         self.imageid = unwrap(self.image.getId())
-        assert type(self.imageid) == long
+        assert isinstance(self.imageid, long)
         wrapper = conn.getObject("Image", self.imageid)
         self.md = Metadata(wrapper)
 

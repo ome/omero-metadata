@@ -92,7 +92,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.4.2.dev1'
+version = '0.5.dev1'
 url = "https://github.com/ome/omero-metadata/"
 
 setup(
@@ -112,6 +112,7 @@ setup(
           'Natural Language :: English',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
           'Topic :: Software Development :: Libraries :: Python Modules',
       ],  # Get strings from
           # http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -123,5 +124,12 @@ setup(
     download_url='%s/v%s.tar.gz' % (url, version),
     keywords=['OMERO.CLI', 'plugin'],
     cmdclass={'test': PyTest},
-    tests_require=['pytest'],
+    install_requires=[
+        'future',
+        'omero-py>=5.6.dev4',
+        'PyYAML'
+    ],
+    tests_require=[
+        'pytest',
+        'mox3'],
 )
