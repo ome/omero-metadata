@@ -35,7 +35,6 @@ import gzip
 import os.path
 import re
 import shutil
-import sys
 
 from omero.api import RoiOptions
 from omero.grid import ImageColumn
