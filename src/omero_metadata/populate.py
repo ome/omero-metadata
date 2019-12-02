@@ -1024,7 +1024,8 @@ class ParsingContext(object):
                 try:
                     log.debug("Value's class: %s" % value.__class__)
                     if isinstance(value, basestring):
-                        column.size = max(column.size, len(value))
+                        column.size = max(
+                            column.size, len(value.encode('utf-8')))
                     # The following are needed for
                     # getting post process column sizes
                     if column.__class__ is WellColumn:
