@@ -102,11 +102,12 @@ class Fixture(object):
     def create_csv(
         self,
         col_names="Well,Well Type,Concentration",
-        row_data=("A1,Control,0", "A2,Treatment,10")
+        row_data=("A1,Control,0", "A2,Treatment,10"),
+        encoding=None,
     ):
 
         csv_filename = create_path("test", ".csv")
-        with open(csv_filename, 'w', encoding="utf-8") as csv_file:
+        with open(csv_filename, 'w', encoding=encoding) as csv_file:
             csv_file.write(col_names)
             csv_file.write("\n")
             csv_file.write("\n".join(row_data))
@@ -769,6 +770,16 @@ class GZIP(Dataset2Images):
         return gzip_filename
 
 
+class Unicode(Plate2Wells):
+
+    def __init__(self):
+        super(Unicode, self).__init__()
+        self.csv = self.create_csv(
+            col_names="Well,Well Type,Concentration,Extra type",
+            row_data=(u"A1,Control,0,მიკროსკოპის", u"A2,Treatment,10,პონი"),
+            encoding="utf-8")
+
+
 class Project2Datasets(Fixture):
 
     def __init__(self):
@@ -990,6 +1001,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         Dataset101Images(),
         Project2Datasets(),
         GZIP(),
+        Unicode(),
     )
     METADATA_IDS = [x.__class__.__name__ for x in METADATA_FIXTURES]
 
