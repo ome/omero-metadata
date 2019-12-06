@@ -774,6 +774,7 @@ class Unicode(Plate2Wells):
 
     def __init__(self):
         super(Unicode, self).__init__()
+        self.count = 5
         self.csv = self.create_csv(
             col_names="Well,Well Type,Concentration,Extra type",
             row_data=(u"A1,Control,0,მიკროსკოპის", u"A2,Treatment,10,პონი"),

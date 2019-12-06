@@ -994,17 +994,15 @@ class ParsingContext(object):
 
     def parse(self):
         if self.file.endswith(".gz"):
-            data_for_preprocessing = gzip.open(self.file, "rt")
-            data = gzip.open(self.file, "rt")
+            with gzip.open(self.file, 'rt', encoding='utf-8') as f1:
+                self.preprocess_from_handle(f1)
+                with gzip.open(self.file, 'rt', encoding='utf-8') as f2:
+                    return self.parse_from_handle_stream(f2)
         else:
-            data_for_preprocessing = open(self.file, 'rt')
-            data = open(self.file, 'rt')
-
-        try:
-            self.preprocess_from_handle(data_for_preprocessing)
-            return self.parse_from_handle_stream(data)
-        finally:
-            data.close()
+            with open(self.file, 'rt', encoding='utf-8') as f1:
+                self.preprocess_from_handle(f1)
+                with open(self.file, 'rt', encoding='utf-8') as f2:
+                    return self.parse_from_handle_stream(f2)
 
     def preprocess_data(self, reader):
         # Get count of data columns - e.g. NOT Well Name
