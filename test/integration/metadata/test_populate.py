@@ -781,6 +781,17 @@ class Unicode(Plate2Wells):
             encoding="utf-8")
 
 
+class UnicodeBOM(Plate2Wells):
+
+    def __init__(self):
+        super(UnicodeBOM, self).__init__()
+        self.count = 5
+        self.csv = self.create_csv(
+            col_names="Well,Well Type,Concentration,Extra type",
+            row_data=("A1,Control,0,მიკროსკოპის", "A2,Treatment,10,პონი"),
+            encoding="utf-8-sig")
+
+
 class Project2Datasets(Fixture):
 
     def __init__(self):
@@ -1003,6 +1014,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         Project2Datasets(),
         GZIP(),
         Unicode(),
+        UnicodeBOM(),
     )
     METADATA_IDS = [x.__class__.__name__ for x in METADATA_FIXTURES]
 
