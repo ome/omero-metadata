@@ -994,14 +994,14 @@ class ParsingContext(object):
 
     def parse(self):
         if self.file.endswith(".gz"):
-            with gzip.open(self.file, 'rt', encoding='utf-8') as f1:
+            with gzip.open(self.file, 'rt', encoding='utf-8-sig') as f1:
                 self.preprocess_from_handle(f1)
-                with gzip.open(self.file, 'rt', encoding='utf-8') as f2:
+                with gzip.open(self.file, 'rt', encoding='utf-8-sig') as f2:
                     return self.parse_from_handle_stream(f2)
         else:
-            with open(self.file, 'rt', encoding='utf-8') as f1:
+            with open(self.file, 'rt', encoding='utf-8-sig') as f1:
                 self.preprocess_from_handle(f1)
-                with open(self.file, 'rt', encoding='utf-8') as f2:
+                with open(self.file, 'rt', encoding='utf-8-sig') as f2:
                     return self.parse_from_handle_stream(f2)
 
     def preprocess_data(self, reader):
