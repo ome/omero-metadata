@@ -127,7 +127,8 @@ setup(
     install_requires=[
         'future',
         'omero-py>=5.6.dev4',
-        'PyYAML'
+        'PyYAML',
+        'jinja2'
     ],
     tests_require=[
         'pytest',
