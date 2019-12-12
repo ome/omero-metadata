@@ -35,7 +35,6 @@ import gzip
 import os.path
 import re
 import shutil
-import sys
 
 from omero.api import RoiOptions
 from omero.grid import ImageColumn
@@ -70,9 +69,6 @@ from pytest import raises
 
 MAPR_NS_GENE = 'openmicroscopy.org/mapr/gene'
 
-pythonminver = mark.skipif(sys.version_info < (2, 7),
-                           reason="requires python2.7")
-
 
 def coord2offset(coord):
     """
@@ -106,17 +102,15 @@ class Fixture(object):
     def create_csv(
         self,
         col_names="Well,Well Type,Concentration",
-        row_data=("A1,Control,0", "A2,Treatment,10")
+        row_data=("A1,Control,0", "A2,Treatment,10"),
+        encoding=None,
     ):
 
         csv_filename = create_path("test", ".csv")
-        csv_file = open(csv_filename, 'w')
-        try:
+        with open(csv_filename, 'w', encoding=encoding) as csv_file:
             csv_file.write(col_names)
             csv_file.write("\n")
             csv_file.write("\n".join(row_data))
-        finally:
-            csv_file.close()
         return str(csv_filename)
 
     def create_project(self, name, datasets=("D001", "D002"),
@@ -776,6 +770,28 @@ class GZIP(Dataset2Images):
         return gzip_filename
 
 
+class Unicode(Plate2Wells):
+
+    def __init__(self):
+        super(Unicode, self).__init__()
+        self.count = 5
+        self.csv = self.create_csv(
+            col_names="Well,Well Type,Concentration,Extra type",
+            row_data=(u"A1,Control,0,მიკროსკოპის", u"A2,Treatment,10,პონი"),
+            encoding="utf-8")
+
+
+class UnicodeBOM(Plate2Wells):
+
+    def __init__(self):
+        super(UnicodeBOM, self).__init__()
+        self.count = 5
+        self.csv = self.create_csv(
+            col_names="Well,Well Type,Concentration,Extra type",
+            row_data=("A1,Control,0,მიკროსკოპის", "A2,Treatment,10,პონი"),
+            encoding="utf-8-sig")
+
+
 class Project2Datasets(Fixture):
 
     def __init__(self):
@@ -854,7 +870,6 @@ class Project2Datasets(Fixture):
                 raise Exception("Unknown dataset: %s" % ds)
 
 
-@pythonminver
 class TestPopulateMetadataConfigLoad(ITest):
 
     def get_cfg_filepath(self):
@@ -879,7 +894,6 @@ class TestPopulateMetadataConfigLoad(ITest):
         self._assert_configs(default_cfg, column_cfgs, advanced_cfgs)
 
 
-@pythonminver
 class TestPopulateMetadataHelper(ITest):
 
     def _test_parsing_context(self, fixture, batch_size):
@@ -969,7 +983,6 @@ class TestPopulateMetadataHelper(ITest):
         assert len(fixture.get_all_map_annotations()) == 0
 
 
-@pythonminver
 class TestPopulateMetadataHelperPerMethod(TestPopulateMetadataHelper):
 
     # Some tests in this file check the counts of annotations in a fixed
@@ -990,7 +1003,6 @@ class TestPopulateMetadataHelperPerMethod(TestPopulateMetadataHelper):
         super(TestPopulateMetadataHelperPerMethod, self).teardown_class()
 
 
-@pythonminver
 class TestPopulateMetadata(TestPopulateMetadataHelper):
 
     METADATA_FIXTURES = (
@@ -1001,6 +1013,8 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         Dataset101Images(),
         Project2Datasets(),
         GZIP(),
+        Unicode(),
+        UnicodeBOM(),
     )
     METADATA_IDS = [x.__class__.__name__ for x in METADATA_FIXTURES]
 
@@ -1068,7 +1082,6 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
             self._test_bulk_to_map_annotation_context(fixture_fail, 2)
 
 
-@pythonminver
 class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
 
     # Hard-code the number of expected map-annotations in these tests
@@ -1219,7 +1232,6 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
             fixture1, fixture2, ns)
 
 
-@pythonminver
 class TestPopulateMetadataConfigFiles(TestPopulateMetadataHelperPerMethod):
 
     def _init_fixture_attach_cfg(self):
@@ -1414,7 +1426,6 @@ class ROICSV(Fixture):
         return self.plate
 
 
-@pythonminver
 class TestPopulateRois(ITest):
 
     def test_populate_rois_plate(self):
