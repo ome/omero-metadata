@@ -13,8 +13,8 @@ management of annotations on objects in OMERO.
 Requirements
 ============
 
-* OMERO 5.4.0 or newer
-* Python 2.7, 3.6
+* OMERO 5.6.0 or newer
+* Python 3.6 or newer
 
 
 Installing from PyPI
@@ -38,7 +38,7 @@ Usage
 
 The plugin is called from the command-line using the `omero` command::
 
-    $ bin/omero metadata <subcommand>
+    $ omero metadata <subcommand>
 
 Help for each command can be shown using the ``-h`` flag.
 Objects can be specified as arguments in the format ``Class:ID``, such
@@ -91,7 +91,7 @@ Examples:
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
 and ``Image Name``::
 
-    $ bin/omero metadata populate Project:1 path/to/project.csv
+    $ omero metadata populate Project:1 path/to/project.csv
 
 project.csv::
 
@@ -160,4 +160,4 @@ licensed under the terms of the GNU General Public License (GPL) v2 or later.
 Copyright
 ---------
 
-2018-2019, The Open Microscopy Environment
+2018-2020, The Open Microscopy Environment
