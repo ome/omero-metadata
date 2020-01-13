@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.5.0
+-----
+
+* Drop support for Python 2
+
 0.4.1
 -----
 

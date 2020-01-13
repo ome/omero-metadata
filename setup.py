@@ -92,7 +92,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.5.dev3'
+version = '0.5.0'
 url = "https://github.com/ome/omero-metadata/"
 
 setup(
@@ -125,7 +125,7 @@ setup(
     cmdclass={'test': PyTest},
     install_requires=[
         'future',
-        'omero-py>=5.6.dev9',
+        'omero-py>=5.6.0',
         'PyYAML',
         'jinja2'
     ],
