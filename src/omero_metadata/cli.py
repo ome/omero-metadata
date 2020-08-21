@@ -170,7 +170,7 @@ class MetadataControl(BaseControl):
 
         for x in (populate, populateroi):
             x.add_argument("--report", action="store_true",
-                 help=argparse.SUPPRESS)
+                           help=argparse.SUPPRESS)
             x.add_argument("-v", "--verbose", action="count", default=0,
                            help="Increase verbosity")
             x.add_argument("-q", "--quiet", action="count", default=0,
