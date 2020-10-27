@@ -9,6 +9,7 @@
 """
 from __future__ import division
 
+import omero_ext.argparse as argparse
 from builtins import str
 from builtins import range
 from builtins import object
@@ -167,8 +168,16 @@ class MetadataControl(BaseControl):
                            type=ProxyStringType(),
                            help="Object in Class:ID format")
 
-        for x in (bulkanns, measures, mapanns, allanns,
-                  rois, populate, populateroi):
+        for x in (populate, populateroi):
+            x.add_argument("--report", action="store_true",
+                           help=argparse.SUPPRESS)
+            x.add_argument("-v", "--verbose", action="count", default=0,
+                           help="Increase verbosity")
+            x.add_argument("-q", "--quiet", action="count", default=0,
+                           help="Decrease verbosity")
+        rois.add_argument("--report", action="store_true", help=(
+            "Report the output of the delete command"))
+        for x in (bulkanns, measures, mapanns, allanns):
             x.add_argument("--report", action="store_true", help=(
                 "Show additional information"))
 
@@ -449,11 +458,11 @@ class MetadataControl(BaseControl):
         "Add metadata (bulk-annotations) to an object"
         md = self._load(args)
         client, conn = self._clientconn(args)
-        # TODO: Configure logging properly
+
+        log_level = logging.INFO - (10 * args.verbose) + (10 * args.quiet)
         if args.report:
-            omero_metadata.populate.log.setLevel(logging.DEBUG)
-        else:
-            omero_metadata.populate.log.setLevel(logging.INFO)
+            log_level = log_level - 10
+        omero_metadata.populate.log.setLevel(log_level)
 
         context_class = dict(self.POPULATE_CONTEXTS)[args.context]
 
@@ -544,11 +553,11 @@ class MetadataControl(BaseControl):
         "Add ROIs to an object"
         md = self._load(args)
         client = self.ctx.conn(args)
-        # TODO: Configure logging properly
+
+        log_level = logging.INFO - (10 * args.verbose) + (10 * args.quiet)
         if args.report:
-            populate_roi.log.setLevel(logging.DEBUG)
-        else:
-            populate_roi.log.setLevel(logging.INFO)
+            log_level = log_level - 10
+
         factory = populate_roi.PlateAnalysisCtxFactory(client.sf)
         ctx = factory.get_analysis_ctx(md.get_id())
         count = ctx.get_measurement_count()
