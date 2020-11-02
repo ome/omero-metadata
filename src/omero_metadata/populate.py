@@ -49,6 +49,7 @@ from omero.model import OriginalFileI, PlateI, PlateAnnotationLinkI, ScreenI
 from omero.model import PlateAcquisitionI, WellI, WellSampleI, ImageI
 from omero.model import ProjectAnnotationLinkI, ProjectI
 from omero.model import ScreenAnnotationLinkI
+from omero.model import ImageAnnotationLinkI
 from omero.model import MapAnnotationI, NamedValue
 from omero.grid import ImageColumn, LongColumn, PlateColumn, RoiColumn
 from omero.grid import StringColumn, WellColumn, DoubleColumn, BoolColumn
@@ -146,6 +147,10 @@ class HeaderResolver(object):
 
     DEFAULT_COLUMN_SIZE = 1
 
+    image_keys = {
+        'roi': RoiColumn
+    }
+    
     dataset_keys = {
         'image': ImageColumn,
         'image_name': StringColumn,
@@ -209,6 +214,9 @@ class HeaderResolver(object):
         elif ProjectI is target_class:
             log.debug('Creating columns for Project:%d' % target_id)
             return self.create_columns_project()
+        elif ImageI is target_class:
+            log.debug('Creating columns for Image:%d' % target_id)
+            return self.create_columns_image()
         raise MetadataError(
             'Unsupported target object class: %s' % target_class)
 
@@ -232,6 +240,9 @@ class HeaderResolver(object):
 
     def create_columns_project(self):
         return self._create_columns("project")
+
+    def create_columns_image(self):
+        return self._create_columns("image")
 
     def _create_columns(self, klass):
         if self.types is not None and len(self.types) != len(self.headers):
@@ -333,6 +344,8 @@ class ValueResolver(object):
             self.wrapper = ScreenWrapper(self)
         elif ProjectI is self.target_class:
             self.wrapper = ProjectWrapper(self)
+        elif ImageI is self.target_class:
+            self.wrapper = ImageWrapper(self)
         else:
             raise MetadataError(
                 'Unsupported target object class: %s' % self.target_class)
@@ -415,6 +428,8 @@ class ValueResolver(object):
         # Prepared to handle DatasetColumn
         if DatasetColumn is column_class:
             return self.wrapper.resolve_dataset(column, row, value)
+        if RoiColumn is column_class:
+            return self.wrapper.resolve_roi(column, row, value)
         if column_as_lower in ('row', 'column') \
            and column_class is LongColumn:
             try:
@@ -838,6 +853,58 @@ class ProjectWrapper(PDIWrapper):
         log.debug('Completed parsing project: %s' % self.target_object.id.val)
 
 
+class ImageWrapper(ValueWrapper):
+
+    def __init__(self, value_resolver):
+        super(ImageWrapper, self).__init__(value_resolver)
+        self.rois_by_id = dict()
+        self._load()
+    
+    def resolve_roi(self, column, row, value):
+        try:
+            return self.rois_by_id[int(value)].id.val
+        except KeyError:
+            log.warn('Image is missing ROI: %s' % value)
+            return Skip()
+        except ValueError:
+            log.warn('Wrong input type for ROI ID: %s' % value)
+            return Skip()
+
+    def _load(self):
+        query_service = self.client.getSession().getQueryService()
+        parameters = omero.sys.ParametersI()
+        parameters.addId(self.target_object.id.val)
+        log.debug('Loading Image:%d' % self.target_object.id.val)
+
+        parameters.page(0, 1)
+        self.target_object = unwrap(query_service.findByQuery(
+            'select i from Image as i where i.id = :id',
+            parameters, {'omero.group': '-1'}))
+        self.target_name = self.target_object.name.val
+
+        data = list()
+        while True:
+            parameters.page(len(data), 1000)
+            rv = query_service.findAllByQuery((
+                'select distinct r from Image as i '
+                'join i.rois as r '
+                'where i.id = :id order by r.id desc'),
+                parameters, {'omero.group': '-1'})
+            if len(rv) == 0:
+                break
+            else:
+                data.extend(rv)
+        if not data:
+            raise MetadataError('Could not find target object!')
+
+        rois_by_id = dict()
+        for roi in data:
+            rid = roi.id.val
+            rois_by_id[rid] = roi
+        self.rois_by_id = rois_by_id
+        log.debug('Completed parsing image: %s' % self.target_name)
+
+
 class ParsingUtilFactory(object):
 
     def get_filter_for_target(self, column_index, target_name):
@@ -905,6 +972,8 @@ class ParsingContext(object):
             return DatasetAnnotationLinkI()
         if ProjectI is self.target_class:
             return ProjectAnnotationLinkI()
+        if ImageI is self.target_class:
+            return ImageAnnotationLinkI()
         raise MetadataError(
             'Unsupported target object class: %s' % self.target_class)
 
