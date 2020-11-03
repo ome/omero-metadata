@@ -4,6 +4,12 @@ CHANGES
 0.5.0
 -----
 
+* Deprecate `--report` option in `omero metadata populate` subcommand in favor or `-v/-q`
+* Use GitHub actions
+
+0.5.0
+-----
+
 * Drop support for Python 2
 
 0.4.1
