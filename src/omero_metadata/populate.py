@@ -858,6 +858,7 @@ class ImageWrapper(ValueWrapper):
         super(ImageWrapper, self).__init__(value_resolver)
         self.rois_by_id = dict()
         self._load()
+
     def resolve_roi(self, column, row, value):
         try:
             return self.rois_by_id[int(value)].id.val
