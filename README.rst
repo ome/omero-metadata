@@ -1,5 +1,5 @@
 .. image:: https://github.com/ome/omero-metadata/workflows/OMERO/badge.svg
-    :target: https://github.com/ome/omero-metadata/workflows/OMERO/badge.svg
+    :target: https://github.com/ome/omero-metadata/actions
 
 .. image:: https://badge.fury.io/py/omero-metadata.svg
     :target: https://badge.fury.io/py/omero-metadata
