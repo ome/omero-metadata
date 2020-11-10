@@ -106,11 +106,14 @@ PLATE_NAME_COLUMN = 'Plate Name'
 WELL_NAME_COLUMN = 'Well Name'
 DATASET_NAME_COLUMN = 'Dataset Name'
 IMAGE_NAME_COLUMN = 'Image Name'
+ROI_NAME_COLUMN = 'Roi Name'
 
 ADDED_COLUMN_NAMES = [PLATE_NAME_COLUMN,
                       WELL_NAME_COLUMN,
                       DATASET_NAME_COLUMN,
                       IMAGE_NAME_COLUMN,
+                      ROI_NAME_COLUMN,
+                      'roi',
                       'image']
 
 
@@ -221,12 +224,18 @@ class HeaderResolver(object):
 
     def columns_sanity_check(self, columns):
         column_types = [column.__class__ for column in columns]
+        column_names = [column.name for column in columns]
         if WellColumn in column_types and ImageColumn in column_types:
             log.debug(column_types)
             raise MetadataError(
                 ('Well Column and Image Column cannot be resolved at '
                  'the same time. Pick one.'))
-        log.debug('Sanity check passed')
+        if RoiColumn in column_types and ROI_NAME_COLUMN in column_names:
+            log.debug('Found both ROI names and IDs. Not appending either.')
+            return False
+        else:
+            log.debug('Sanity check passed')
+            return True
 
     def create_columns_screen(self):
         return self._create_columns("screen")
@@ -298,8 +307,13 @@ class HeaderResolver(object):
             # Currently hard-coded, but "if image name, then add image id"
             if column.name == IMAGE_NAME_COLUMN:
                 append.append(ImageColumn("Image", '', list()))
-        columns.extend(append)
-        self.columns_sanity_check(columns)
+            if column.__class__ is RoiColumn:
+                append.append(StringColumn(ROI_NAME_COLUMN, '',
+                              self.DEFAULT_COLUMN_SIZE, list()))
+            if column.name == ROI_NAME_COLUMN:
+                append.append(RoiColumn("roi", '', list()))
+        if self.columns_sanity_check(columns):
+            columns.extend(append)
         return columns
 
 
@@ -364,6 +378,12 @@ class ValueResolver(object):
 
     def get_image_name_by_id(self, iid, pid=None):
         return self.wrapper.get_image_name_by_id(iid, pid)
+
+    def get_roi_id_by_name(self, rname):
+        return self.wrapper.get_roi_id_by_name(rname)
+
+    def get_roi_name_by_id(self, rid):
+        return self.wrapper.get_roi_name_by_id(rid)
 
     def subselect(self, valuerows, names):
         return self.wrapper.subselect(valuerows, names)
@@ -857,7 +877,14 @@ class ImageWrapper(ValueWrapper):
     def __init__(self, value_resolver):
         super(ImageWrapper, self).__init__(value_resolver)
         self.rois_by_id = dict()
+        self.rois_by_name = dict()
         self._load()
+
+    def get_roi_id_by_name(self, rname):
+        return self.rois_by_name[rname].id.val
+
+    def get_roi_name_by_id(self, rid):
+        return self.rois_by_id[rid].name.val
 
     def resolve_roi(self, column, row, value):
         try:
@@ -897,10 +924,13 @@ class ImageWrapper(ValueWrapper):
             raise MetadataError('Could not find target object!')
 
         rois_by_id = dict()
+        rois_by_name = dict()
         for roi in data:
             rid = roi.id.val
             rois_by_id[rid] = roi
+            rois_by_name[roi.name.val] = roi
         self.rois_by_id = rois_by_id
+        self.rois_by_name = rois_by_name
         log.debug('Completed parsing image: %s' % self.target_name)
 
 
@@ -1098,6 +1128,10 @@ class ParsingContext(object):
                         column.values.append(value)
                     elif column.__class__ is ImageColumn:
                         column.values.append(value)
+                    elif column.__class__ is RoiColumn:
+                        column.values.append(value)
+                    elif column.name.lower() is ROI_NAME_COLUMN:
+                        column.values.append(value)
                     elif column.name.lower() == "plate":
                         column.values.append(value)
                 except TypeError:
@@ -1126,7 +1160,9 @@ class ParsingContext(object):
                     if isinstance(column, ImageColumn) or \
                        column.name in (PLATE_NAME_COLUMN,
                                        WELL_NAME_COLUMN,
-                                       IMAGE_NAME_COLUMN):
+                                       IMAGE_NAME_COLUMN,
+                                       ROI_NAME_COLUMN,
+                                       'roi'):
                         # Then assume that the values will be calculated
                         # later based on another column.
                         continue
@@ -1196,8 +1232,12 @@ class ParsingContext(object):
         plate_name_column = None
         image_column = None
         image_name_column = None
+        roi_column = None
+        roi_name_column = None
         resolve_image_names = False
         resolve_image_ids = False
+        resolve_roi_names = False
+        resolve_roi_ids = False
         for column in self.columns:
             columns_by_name[column.name.lower()] = column
             if column.__class__ is PlateColumn:
@@ -1220,9 +1260,22 @@ class ParsingContext(object):
                 if len(column.values) > 0:
                     resolve_image_names = True
                     log.debug("Resolving Image Ids")
+            elif column.name == ROI_NAME_COLUMN:
+                roi_name_column = column
+                log.debug("Roi name column len: %d" % len(column.values))
+                if len(column.values) > 0:
+                    resolve_roi_ids = True
+                    log.debug("Resolving ROI IDs")
+            elif column.__class__ is RoiColumn:
+                roi_column = column
+                log.debug("Roi column len: %d" % len(column.values))
+                if len(column.values) > 0:
+                    resolve_roi_names = True
+                    log.debug("Resolving ROI names")
 
         if well_name_column is None and plate_name_column is None \
-                and image_name_column is None:
+                and image_name_column is None and roi_name_column is None \
+                and roi_column is None:
             log.info('Nothing to do during post processing.')
             return
 
@@ -1309,7 +1362,7 @@ class ParsingContext(object):
                 image_name_column.size = max(
                     image_name_column.size, len(iname)
                 )
-            else:
+            elif target_class is not ImageI:
                 log.info('Missing image name column, skipping.')
 
             if plate_name_column is not None:
@@ -1319,6 +1372,37 @@ class ParsingContext(object):
                 plate_name_column.values.append(v)
             elif (ScreenI is target_class or PlateI is target_class):
                 log.info('Missing plate name column, skipping.')
+
+            if roi_column is not None and (
+                    ImageI is target_class and
+                    resolve_roi_names and not resolve_roi_ids):
+                rname = ""
+                try:
+                    log.debug(roi_column)
+                    rid = roi_column.values[i]
+                    rname = self.value_resolver.get_roi_name_by_id(rid)
+                except KeyError:
+                    log.warn(
+                        "%d not found in roi ids" % rid)
+                assert i == len(roi_name_column.values)
+                roi_name_column.values.append(rname)
+                roi_name_column.size = max(
+                    roi_name_column.size, len(rname))
+            elif roi_name_column is not None and (
+                    ImageI is target_class and
+                    resolve_roi_ids and not resolve_roi_names):
+                rid = -1
+                try:
+                    log.debug(roi_name_column)
+                    rname = roi_name_column.values[i]
+                    rid = self.value_resolver.get_roi_id_by_name(rname)
+                except KeyError:
+                    log.warn(
+                        "%d not found in roi names" % rname)
+                assert i == len(roi_column.values)
+                roi_column.values.append(rid)
+            else:
+                log.info('No ROI information resolution needed, skipping.')
 
 
 class _QueryContext(object):
