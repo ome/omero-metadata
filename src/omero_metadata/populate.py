@@ -335,6 +335,7 @@ class ValueResolver(object):
         self.target_class = self.target_object.__class__
         self.target_type = self.target_object.ice_staticId().split('::')[-1]
         self.target_id = self.target_object.id.val
+        self.ambiguous_naming = False
         q = "select x.details.group.id from %s x where x.id = %d " % (
             self.target_type, self.target_id
         )
@@ -359,6 +360,7 @@ class ValueResolver(object):
             self.wrapper = ProjectWrapper(self)
         elif ImageI is self.target_class:
             self.wrapper = ImageWrapper(self)
+            self.ambiguous_naming = self.wrapper.ambiguous_naming
         else:
             raise MetadataError(
                 'Unsupported target object class: %s' % self.target_class)
@@ -878,6 +880,7 @@ class ImageWrapper(ValueWrapper):
         super(ImageWrapper, self).__init__(value_resolver)
         self.rois_by_id = dict()
         self.rois_by_name = dict()
+        self.ambiguous_naming = False
         self._load()
 
     def get_roi_id_by_name(self, rname):
@@ -928,6 +931,9 @@ class ImageWrapper(ValueWrapper):
         for roi in data:
             rid = roi.id.val
             rois_by_id[rid] = roi
+            if roi.name.val in rois_by_name.keys():
+                log.warn('Conflicting ROI names.')
+                self.ambiguous_naming = True
             rois_by_name[roi.name.val] = roi
         self.rois_by_id = rois_by_id
         self.rois_by_name = rois_by_name
@@ -1391,6 +1397,8 @@ class ParsingContext(object):
             elif roi_name_column is not None and (
                     ImageI is target_class and
                     resolve_roi_ids and not resolve_roi_names):
+                if self.value_resolver.ambiguous_naming:
+                    raise MetadataError('Cannot resolve ROI names.')
                 rid = -1
                 try:
                     log.debug(roi_name_column)
