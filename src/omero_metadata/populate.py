@@ -1410,7 +1410,7 @@ class ParsingContext(object):
                 assert i == len(roi_column.values)
                 roi_column.values.append(rid)
             else:
-                log.info('No ROI information resolution needed, skipping.')
+                log.debug('No ROI information resolution needed, skipping.')
 
 
 class _QueryContext(object):
