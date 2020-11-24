@@ -1,7 +1,12 @@
 CHANGES
 =======
 
-0.5.0
+0.6.0
+-----
+
+* Add support for image-level OMERO.table population with ROI-level data
+
+0.5.1
 -----
 
 * Deprecate `--report` option in `omero metadata populate` subcommand in favor or `-v/-q`
