@@ -237,6 +237,18 @@ class TestMetadataControl(MetadataTestBase):
         else:
             assert "name:" not in o
 
+    def test_deletebulkanns(self, capfd):
+        tag, fab, fam, ma = self.create_annotations(self.image)
+
+        prx = "Image:%s" % self.imageid
+        self.args += ["deletebulkanns", prx]
+        o = self.invoke(capfd)
+        assert "FileAnnotation:" in o
+
+        # Should be empty since it's deleted
+        o = self.invoke(capfd)
+        assert len(o.strip()) == 0
+
     @pytest.mark.parametrize('report', [False, True])
     def test_measures(self, capfd, report):
         tag, fab, fam, ma = self.create_annotations(self.image)
