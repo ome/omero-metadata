@@ -148,6 +148,7 @@ class MetadataControl(BaseControl):
         original = parser.add(sub, self.original)
         measures = parser.add(sub, self.measures)
         bulkanns = parser.add(sub, self.bulkanns)
+        deletebulkanns = parser.add(sub, self.deletebulkanns)
         mapanns = parser.add(sub, self.mapanns)
         allanns = parser.add(sub, self.allanns)
         parser.add(sub, self.testtables)
@@ -162,8 +163,19 @@ class MetadataControl(BaseControl):
                               help="Number of objects to process at once")
         self._add_wait(populate)
 
-        for x in (summary, original, bulkanns, measures, mapanns, allanns,
-                  rois, populate, populateroi, pixelsize):
+        for x in (
+            summary,
+            original,
+            bulkanns,
+            deletebulkanns,
+            measures,
+            mapanns,
+            allanns,
+            rois,
+            populate,
+            populateroi,
+            pixelsize,
+        ):
             x.add_argument("obj",
                            type=ProxyStringType(),
                            help="Object in Class:ID format")
@@ -181,7 +193,12 @@ class MetadataControl(BaseControl):
             x.add_argument("--report", action="store_true", help=(
                 "Show additional information"))
 
-        for x in (rois, populate, populateroi):
+        for x in (
+            deletebulkanns,
+            populate,
+            populateroi,
+            rois,
+        ):
             dry_or_not = x.add_mutually_exclusive_group()
             dry_or_not.add_argument("-n", "--dry-run", action="store_true")
             dry_or_not.add_argument("-f", "--force", action="store_false",
@@ -383,6 +400,17 @@ class MetadataControl(BaseControl):
             indent = 0
         self._output_ann(
             md, lambda md: md.get_bulkanns(), args.parents, indent)
+
+    def deletebulkanns(self, args):
+        """Delete all NSBULKANNOTATION tables linked to the given object"""
+        md = self._load(args)
+        anns = list(md.get_bulkanns())
+        self._output_ann(
+            md, lambda _: anns, False, None)
+        if not args.dry_run:
+            client, conn = self._clientconn(args)
+            for a in anns:
+                conn.deleteObject(a._obj)
 
     def measures(self, args):
         ("Provide a list of the NSMEASUREMENT tables linked "
