@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.7.0
+-----
+
+* Add new `deletebulkanns` commands for deleting all bulk annotations of a target
+
 0.6.0
 -----
 
