@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.7.1
+-----
+
+* Close callbacks
+
 0.7.0
 -----
 
