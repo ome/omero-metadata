@@ -2084,6 +2084,7 @@ class DeleteMapAnnotationContext(_QueryContext):
         # At this point, we're sure that there's a response OR
         # an exception has been thrown (likely LockTimeout)
         rsp = callback.getResponse()
+        callback.close(True)
         try:
             deleted = rsp.deletedObjects
             log.info("Deleted objects in %g s" % (time.time() - start))
