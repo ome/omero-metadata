@@ -461,9 +461,15 @@ class ValueResolver(object):
         if StringColumn is column_class:
             return value
         if LongColumn is column_class:
-            return int(value)
+            try:
+                return int(value)
+            except ValueError:
+                return float("NaN")
         if DoubleColumn is column_class:
-            return float(value)
+            try:
+                return float(value)
+            except ValueError:
+                return float("NaN")
         if BoolColumn is column_class:
             return value.lower() in BOOLEAN_TRUE
         raise MetadataError('Unsupported column class: %s' % column_class)
