@@ -142,7 +142,12 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
-If the target is an Image, a csv with ROI-level and object-level data can be used to create an ``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image. The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name`` column will be appended automatically (see example below). Alternatively, the input column can be ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
+If the target is an Image, a csv with ROI-level and object-level data can be used to create an
+``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image.
+The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
+column will be appended automatically (see example below). Alternatively, the input column can be
+``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
+In *both* cases, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 image.csv::
 
