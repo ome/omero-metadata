@@ -91,7 +91,7 @@ Examples:
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
 and ``Image Name``::
 
-    $ omero metadata populate Project:1 path/to/project.csv
+    $ omero metadata populate Project:1 --file path/to/project.csv
 
 project.csv::
 
