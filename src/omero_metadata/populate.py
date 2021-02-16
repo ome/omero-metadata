@@ -329,13 +329,14 @@ class ValueResolver(object):
         AS_ALPHA.append('a' + chr(v))
     WELL_REGEX = re.compile(r'^([a-zA-Z]+)(\d+)$')
 
-    def __init__(self, client, target_object):
+    def __init__(self, client, target_object, allow_nan=False):
         self.client = client
         self.target_object = target_object
         self.target_class = self.target_object.__class__
         self.target_type = self.target_object.ice_staticId().split('::')[-1]
         self.target_id = self.target_object.id.val
         self.ambiguous_naming = False
+        self.allow_nan = allow_nan
         q = "select x.details.group.id from %s x where x.id = %d " % (
             self.target_type, self.target_id
         )
@@ -460,16 +461,17 @@ class ValueResolver(object):
                 return int(self.AS_ALPHA.index(value.lower()))
         if StringColumn is column_class:
             return value
+        if len(value) == 0 and (LongColumn is column_class or
+                DoubleColumn is column_class):
+            if self.allow_nan:
+                return float("NaN")
+            else:
+                raise TypeError("Empty Double or Long value. "
+                                "Use --allow_nan to convert to NaN")
         if LongColumn is column_class:
-            try:
-                return int(value)
-            except ValueError:
-                return float("NaN")
+            return int(value)
         if DoubleColumn is column_class:
-            try:
-                return float(value)
-            except ValueError:
-                return float("NaN")
+            return float(value)
         if BoolColumn is column_class:
             return value.lower() in BOOLEAN_TRUE
         raise MetadataError('Unsupported column class: %s' % column_class)
@@ -979,7 +981,7 @@ class ParsingContext(object):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None, batch_size=1000, loops=10, ms=500,
-                 dry_run=False):
+                 dry_run=False, allow_nan=False):
         '''
         This lines should be handled outside of the constructor:
 
@@ -997,7 +999,8 @@ class ParsingContext(object):
         self.target_object = target_object
         self.file = file
         self.column_types = column_types
-        self.value_resolver = ValueResolver(client, target_object)
+        self.value_resolver = ValueResolver(client, target_object,
+                                            allow_nan=allow_nan)
         self.parsing_util_factory = ParsingUtilFactory(client,
                                                        target_object,
                                                        self.value_resolver)

@@ -239,6 +239,9 @@ class MetadataControl(BaseControl):
         populate.add_argument("--localcfg", help=(
             "Local configuration file or a JSON object string"))
 
+        populate.add_argument("--allow_nan", action="store_true", help=(
+            "Allow empty values to become Nan in Long or Double columns"))
+
         populateroi.add_argument(
             "--measurement", type=int, default=None,
             help="Index of the measurement to populate. By default, all")
@@ -529,7 +532,8 @@ class MetadataControl(BaseControl):
         ctx = context_class(client, args.obj, file=args.file, fileid=fileid,
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
-                            loops=loops, ms=ms, dry_run=args.dry_run)
+                            loops=loops, ms=ms, dry_run=args.dry_run,
+                            allow_nan=args.allow_nan)
         ctx.parse()
 
     def rois(self, args):
