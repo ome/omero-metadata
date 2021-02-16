@@ -464,6 +464,7 @@ class ValueResolver(object):
         if len(value) == 0 and (LongColumn is column_class or
                                 DoubleColumn is column_class):
             if self.allow_nan:
+                log.debug('NaN value for column: %s' % column.name)
                 return float("NaN")
             else:
                 raise TypeError("Empty Double or Long value. "
