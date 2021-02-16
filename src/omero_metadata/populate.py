@@ -462,7 +462,7 @@ class ValueResolver(object):
         if StringColumn is column_class:
             return value
         if len(value) == 0 and (LongColumn is column_class or
-                DoubleColumn is column_class):
+                                DoubleColumn is column_class):
             if self.allow_nan:
                 return float("NaN")
             else:
