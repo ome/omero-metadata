@@ -742,7 +742,8 @@ class Image2Rois(Fixture):
         if not self.image:
             image = self.test.make_image()
             # reload image to avoid unloaded exceptions etc.
-            self.image = self.test.client.sf.getQueryService().get('Image', image.id.val)
+            self.image = self.test.client.sf.getQueryService().get(
+                'Image', image.id.val)
             self.rois = self.create_rois()
         return self.image
 
@@ -994,7 +995,7 @@ class TestPopulateMetadataHelper(ITest):
         ctx = ParsingContext(self.client,
                              target,
                              file=csv,
-                             allow_nan=(allow_nan == True))
+                             allow_nan=(allow_nan is True))
 
         if allow_nan is False:
             with raises(ValueError):
