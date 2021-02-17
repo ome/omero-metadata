@@ -468,7 +468,7 @@ class ValueResolver(object):
                 return float("NaN")
             else:
                 raise ValueError("Empty Double or Long value. "
-                                "Use --allow_nan to convert to NaN")
+                                 "Use --allow_nan to convert to NaN")
         if LongColumn is column_class:
             return int(value)
         if DoubleColumn is column_class:
