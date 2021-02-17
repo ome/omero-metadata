@@ -103,11 +103,15 @@ class Fixture(object):
         self,
         col_names="Well,Well Type,Concentration",
         row_data=("A1,Control,0", "A2,Treatment,10"),
+        header=None,
         encoding=None,
     ):
 
         csv_filename = create_path("test", ".csv")
         with open(csv_filename, 'w', encoding=encoding) as csv_file:
+            if header is not None:
+                csv_file.write(header)
+                csv_file.write("\n")
             csv_file.write(col_names)
             csv_file.write("\n")
             csv_file.write("\n".join(row_data))
@@ -717,15 +721,18 @@ class Dataset2Images(Fixture):
 class Image2Rois(Fixture):
 
     def __init__(self):
-        self.count = 4
+        self.count = 5
         self.ann_count = 0
+        self.allow_nan = True
         self.csv = self.create_csv(
-            col_names="Roi Name,Type,Concentration",
+            col_names="Roi Name,Feature,Concentration,Count",
+            # _assert_parsing_context_values checks these values
+            row_data=("roi1,Cell,0.5,100", "roi2,Blob,,200"),
+            header="# header s,s,d,l"
         )
         self.image = None
         self.rois = None
-        self.names = ("A1", "A2")
-
+        self.names = ("roi1", "roi2")
 
     def assert_rows(self, rows):
         # Hard-coded in createCsv's arguments
@@ -771,6 +778,18 @@ class Image2Rois(Fixture):
 
     def assert_child_annotations(self, oas):
         assert len(oas) == 0
+
+
+class Image2RoisNoNan(Image2Rois):
+    """
+    Tests that creating LongColumn or DoubleColumn with empty value
+    will fail if self.allow_nan is False.
+    The csv of the parent class contains empty values for a 'd' column
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.allow_nan = False
 
 
 class Dataset2Images1Missing(Dataset2Images):
@@ -962,6 +981,9 @@ class TestPopulateMetadataHelper(ITest):
         """
 
         target = fixture.get_target()
+        allow_nan = None
+        if hasattr(fixture, 'allow_nan'):
+            allow_nan = fixture.allow_nan
         # Deleting anns so that we can re-use the same user
         self.delete(fixture.get_annotations())
         child_anns = fixture.get_child_annotations()
@@ -971,8 +993,15 @@ class TestPopulateMetadataHelper(ITest):
         csv = fixture.get_csv()
         ctx = ParsingContext(self.client,
                              target,
-                             file=csv)
-        ctx.parse()
+                             file=csv,
+                             allow_nan=(allow_nan == True))
+
+        if allow_nan is False:
+            with raises(ValueError):
+                ctx.parse()
+            return
+        else:
+            ctx.parse()
 
         # Get file annotations
         anns = fixture.get_annotations()
@@ -1000,6 +1029,12 @@ class TestPopulateMetadataHelper(ITest):
                 assert "Control" in row_values
             elif "A2" in row_values or "a2" in row_values:
                 assert "Treatment" in row_values
+            elif "roi1" in row_values:
+                assert 0.5 in row_values
+                assert 100 in row_values
+            elif "roi2" in row_values:
+                assert 'nan' in [str(value) for value in row_values]
+                assert 200 in row_values
 
     def _test_bulk_to_map_annotation_context(self, fixture, batch_size):
         # self._testPopulateMetadataPlate()
@@ -1072,6 +1107,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         Dataset101Images(),
         Project2Datasets(),
         Image2Rois(),
+        Image2RoisNoNan(),
         GZIP(),
         Unicode(),
         UnicodeBOM(),
@@ -1094,6 +1130,8 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         """
         fixture.init(self)
         t = self._test_parsing_context(fixture, batch_size)
+        if t is None:
+            return
         self._assert_parsing_context_values(t, fixture)
         self._test_bulk_to_map_annotation_context(fixture, batch_size)
         self._test_delete_map_annotation_context(fixture, batch_size)
