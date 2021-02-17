@@ -43,7 +43,7 @@ from omero.grid import StringColumn
 from omero.model import OriginalFileI
 from omero.model import FileAnnotationI, MapAnnotationI, PlateAnnotationLinkI
 from omero.model import RoiAnnotationLinkI
-from omero.model import RoiI, PointI, ProjectI, ScreenI
+from omero.model import ImageI, RoiI, PointI, ProjectI, ScreenI
 from omero.rtypes import rdouble, rlist, rstring, unwrap
 from omero.sys import ParametersI
 
@@ -714,6 +714,65 @@ class Dataset2Images(Fixture):
                 assert typ == 'Treatment'
 
 
+class Image2Rois(Fixture):
+
+    def __init__(self):
+        self.count = 4
+        self.ann_count = 0
+        self.csv = self.create_csv(
+            col_names="Roi Name,Type,Concentration",
+        )
+        self.image = None
+        self.rois = None
+        self.names = ("A1", "A2")
+
+
+    def assert_rows(self, rows):
+        # Hard-coded in createCsv's arguments
+        assert rows == 2
+
+    def get_target(self):
+        if not self.image:
+            image = self.test.make_image()
+            # reload image to avoid unloaded exceptions etc.
+            self.image = self.test.client.sf.getQueryService().get('Image', image.id.val)
+            self.rois = self.create_rois()
+        return self.image
+
+    def create_rois(self):
+        if not self.image:
+            return []
+        rois = []
+        for roi_name in self.names:
+            roi = RoiI()
+            roi.name = rstring(roi_name)
+            roi.setImage(ImageI(self.image.id.val, False))
+            point = PointI()
+            point.x = rdouble(1)
+            point.y = rdouble(2)
+            roi.addShape(point)
+            rois.append(roi)
+        us = self.test.client.sf.getUpdateService()
+        return us.saveAndReturnArray(rois)
+
+    def get_annotations(self):
+        query = """select i from Image i
+            left outer join fetch i.annotationLinks links
+            left outer join fetch links.child
+            where i.id=%s""" % self.image.id.val
+        qs = self.test.client.sf.getQueryService()
+        ds = qs.findByQuery(query, None)
+        anns = ds.linkedAnnotationList()
+        return anns
+
+    def get_child_annotations(self):
+        # BulkToMapAnnotationContext creates no annotations
+        return []
+
+    def assert_child_annotations(self, oas):
+        assert len(oas) == 0
+
+
 class Dataset2Images1Missing(Dataset2Images):
 
     def __init__(self):
@@ -1012,6 +1071,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         Dataset2Images1Missing(),
         Dataset101Images(),
         Project2Datasets(),
+        Image2Rois(),
         GZIP(),
         Unicode(),
         UnicodeBOM(),
