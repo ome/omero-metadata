@@ -91,7 +91,7 @@ Examples:
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
 and ``Image Name``::
 
-    $ omero metadata populate Project:1 path/to/project.csv
+    $ omero metadata populate Project:1 --file path/to/project.csv
 
 project.csv::
 
@@ -142,7 +142,12 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
-If the target is an Image, a csv with ROI-level and object-level data can be used to create an ``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image. The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name`` column will be appended automatically (see example below). Alternatively, the input column can be ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
+If the target is an Image, a csv with ROI-level and object-level data can be used to create an
+``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image.
+The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
+column will be appended automatically (see example below). Alternatively, the input column can be
+``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
+In *both* cases, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 image.csv::
 
