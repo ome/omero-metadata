@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.8.0
+-----
+
+* Add --allow-nan option to handle missing values in Double/Float columns
+
 0.7.1
 -----
 
