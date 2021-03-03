@@ -226,12 +226,18 @@ class HeaderResolver(object):
     def columns_sanity_check(self, columns):
         column_types = [column.__class__ for column in columns]
         column_names = [column.name for column in columns]
+        # Check for column names which are python keywords or contain spaces
         lower_case_kws = [kw.lower() for kw in keyword.kwlist]
+        omero_reserved_col_names = ['Image Name',
+                                    'Dataset Name']
         for col_name in column_names:
             if col_name.lower() in lower_case_kws:
                 raise MetadataError(
                     ('Cannot use column name "' + col_name +
                      '" because it is a reserved python keyword'))
+            if ' ' in col_name and col_name not in omero_reserved_col_names:
+                log.warn('Column name "' + col_name +
+                         '" contains a space and cannot be used for querying')
         if WellColumn in column_types and ImageColumn in column_types:
             log.debug(column_types)
             raise MetadataError(
