@@ -230,8 +230,8 @@ class HeaderResolver(object):
         for col_name in column_names:
             if col_name.lower() in lower_case_kws:
                 raise MetadataError(
-                ('Cannot use column name "' + col_name +
-                    '" because it is a reserved python keyword'))
+                    ('Cannot use column name "' + col_name +
+                     '" because it is a reserved python keyword'))
         if WellColumn in column_types and ImageColumn in column_types:
             log.debug(column_types)
             raise MetadataError(
