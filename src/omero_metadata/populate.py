@@ -179,11 +179,12 @@ class HeaderResolver(object):
         'plate': PlateColumn,
     }, **plate_keys)
 
-    def __init__(self, target_object, headers, column_types=None):
+    def __init__(self, target_object, headers, column_types=None, force_cols=False):
         self.target_object = target_object
         self.headers = headers
         self.headers_as_lower = [v.lower() for v in self.headers]
         self.types = column_types
+        self.force_cols = force_cols
 
     @staticmethod
     def is_row_column_types(row):
@@ -227,14 +228,16 @@ class HeaderResolver(object):
         column_types = [column.__class__ for column in columns]
         column_names = [column.name for column in columns]
         # Check for column names which are python keywords or contain spaces
-        lower_case_kws = [kw.lower() for kw in keyword.kwlist]
+        if not self.force_cols:
+            lower_case_kws = [kw.lower() for kw in keyword.kwlist]
+            for col_name in column_names:
+                if col_name.lower() in lower_case_kws:
+                    raise MetadataError(
+                        ('Cannot use column name "' + col_name +
+                         '" because it is a reserved python keyword'))
         omero_reserved_col_names = ['Image Name',
                                     'Dataset Name']
         for col_name in column_names:
-            if col_name.lower() in lower_case_kws:
-                raise MetadataError(
-                    ('Cannot use column name "' + col_name +
-                     '" because it is a reserved python keyword'))
             if ' ' in col_name and col_name not in omero_reserved_col_names:
                 log.warn('Column name "' + col_name +
                          '" contains a space and cannot be used for querying')
@@ -995,7 +998,7 @@ class ParsingContext(object):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None, batch_size=1000, loops=10, ms=500,
-                 dry_run=False, allow_nan=False):
+                 dry_run=False, allow_nan=False, force_cols=False):
         '''
         This lines should be handled outside of the constructor:
 
@@ -1019,6 +1022,7 @@ class ParsingContext(object):
                                                        target_object,
                                                        self.value_resolver)
         self.dry_run = dry_run
+        self.force_cols = force_cols
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
@@ -1063,7 +1067,7 @@ class ParsingContext(object):
         log.debug('Column types: %r' % self.column_types)
         self.header_resolver = HeaderResolver(
             self.target_object, header_row,
-            column_types=self.column_types)
+            column_types=self.column_types, force_cols=self.force_cols)
         self.columns = self.header_resolver.create_columns()
         log.debug('Columns: %r' % self.columns)
         if len(self.columns) > MAX_COLUMN_COUNT:
