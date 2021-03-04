@@ -179,7 +179,8 @@ class HeaderResolver(object):
         'plate': PlateColumn,
     }, **plate_keys)
 
-    def __init__(self, target_object, headers, column_types=None, force_cols=False):
+    def __init__(self, target_object, headers, column_types=None,
+                 force_cols=False):
         self.target_object = target_object
         self.headers = headers
         self.headers_as_lower = [v.lower() for v in self.headers]

@@ -536,7 +536,8 @@ class MetadataControl(BaseControl):
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
                             loops=loops, ms=ms, dry_run=args.dry_run,
-                            allow_nan=args.allow_nan, force_cols=args.force_cols)
+                            allow_nan=args.allow_nan,
+                            force_cols=args.force_cols)
         ctx.parse()
 
     def rois(self, args):
