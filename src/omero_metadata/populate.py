@@ -311,7 +311,7 @@ class HeaderResolver(object):
                 append.append(StringColumn(ROI_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
             if column.name == ROI_NAME_COLUMN:
-                append.append(RoiColumn("roi", '', list()))
+                append.append(RoiColumn("Roi", '', list()))
         if self.columns_sanity_check(columns):
             columns.extend(append)
         return columns
@@ -1178,7 +1178,7 @@ class ParsingContext(object):
                                        WELL_NAME_COLUMN,
                                        IMAGE_NAME_COLUMN,
                                        ROI_NAME_COLUMN,
-                                       'roi'):
+                                       'Roi'):
                         # Then assume that the values will be calculated
                         # later based on another column.
                         continue
