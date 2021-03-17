@@ -304,12 +304,16 @@ class HeaderResolver(object):
             if column.__class__ is ImageColumn:
                 append.append(StringColumn(IMAGE_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
-            # Currently hard-coded, but "if image name, then add image id"
-            if column.name == IMAGE_NAME_COLUMN:
-                append.append(ImageColumn("Image", '', list()))
+                # Ensure ImageColumn is named "Image"
+                column.name = "Image"
             if column.__class__ is RoiColumn:
                 append.append(StringColumn(ROI_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                # Ensure RoiColumn is named 'Roi'
+                column.name = "Roi"
+            # If image/roi name, then add ID column"
+            if column.name == IMAGE_NAME_COLUMN:
+                append.append(ImageColumn("Image", '', list()))
             if column.name == ROI_NAME_COLUMN:
                 append.append(RoiColumn("Roi", '', list()))
         if self.columns_sanity_check(columns):
