@@ -1178,11 +1178,11 @@ class ParsingContext(object):
             for column in self.columns:
                 if not values:
                     if isinstance(column, ImageColumn) or \
+                       isinstance(column, RoiColumn) or \
                        column.name in (PLATE_NAME_COLUMN,
                                        WELL_NAME_COLUMN,
                                        IMAGE_NAME_COLUMN,
-                                       ROI_NAME_COLUMN,
-                                       'Roi'):
+                                       ROI_NAME_COLUMN):
                         # Then assume that the values will be calculated
                         # later based on another column.
                         continue
