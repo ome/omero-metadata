@@ -298,9 +298,11 @@ class HeaderResolver(object):
             if column.__class__ is PlateColumn:
                 append.append(StringColumn(PLATE_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                column.name = "Plate"
             if column.__class__ is WellColumn:
                 append.append(StringColumn(WELL_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                column.name = "Well"
             if column.__class__ is ImageColumn:
                 append.append(StringColumn(IMAGE_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
