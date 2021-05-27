@@ -167,8 +167,12 @@ class Fixture(object):
     def get_namespaces(self):
         return [NSBULKANNOTATIONS]
 
-    def assert_rows(self, rows):
+    def assert_row_count(self, rows):
         assert rows == self.row_count * self.col_count
+
+    def assert_columns(self, columns):
+        col_names = "Well,Well Type,Concentration,Well Name"
+        assert col_names == ",".join([c.name for c in columns])
 
     def assert_child_annotations(self, oas):
         for ma, wid, wr, wc in oas:
@@ -206,11 +210,16 @@ class Screen2Plates(Fixture):
                       "P002,A1,Control,0", "P002,A2,Treatment,10"))
         self.screen = None
 
-    def assert_rows(self, rows):
+    def assert_row_count(self, rows):
         """
         Double the number of rows due to 2 plates.
         """
         assert rows == 2 * self.row_count * self.col_count
+
+    def assert_columns(self, columns):
+        # Adds Plate Name,Well Name columns
+        col_names = "Plate,Well,Well Type,Concentration,Plate Name,Well Name"
+        assert col_names == ",".join([c.name for c in columns])
 
     def get_target(self):
         if not self.screen:
@@ -574,6 +583,10 @@ class Plate2WellsNs2UnavailableHeader(Plate2WellsNs2):
         )
         self.plate = None
 
+    def assert_columns(self, columns):
+        col_names = "Well,Gene,Gene Names"
+        assert col_names == ",".join([c.name for c in columns])
+
     def get_cfg(self):
         return os.path.join(os.path.dirname(__file__),
                             'bulk_to_map_annotation_context_ns2_empty.yml')
@@ -636,6 +649,10 @@ class Plate2WellsNs2Fail(Plate2WellsNs2):
         )
         self.plate = None
 
+    def assert_columns(self, columns):
+        col_names = "Well,Gene,Gene Names"
+        assert col_names == ",".join([c.name for c in columns])
+
     def get_cfg(self):
         return os.path.join(os.path.dirname(__file__),
                             'bulk_to_map_annotation_context_ns2_fail.yml')
@@ -656,7 +673,12 @@ class Dataset2Images(Fixture):
         self.images = None
         self.names = ("A1", "A2")
 
-    def assert_rows(self, rows):
+    def assert_columns(self, columns):
+        # adds "Image" column to table
+        col_names = "Image Name,Type,Concentration,Image"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_row_count(self, rows):
         # Hard-coded in createCsv's arguments
         assert rows == 2
 
@@ -734,7 +756,12 @@ class Image2Rois(Fixture):
         self.rois = None
         self.names = ("roi1", "roi2")
 
-    def assert_rows(self, rows):
+    def assert_columns(self, columns):
+        # Adds a new 'Roi' column
+        col_names = "Roi Name,Feature,Concentration,Count,Roi"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_row_count(self, rows):
         # Hard-coded in createCsv's arguments
         assert rows == 2
 
@@ -833,7 +860,11 @@ class Dataset101Images(Dataset2Images):
         self.dataset = None
         self.images = None
 
-    def assert_rows(self, rows):
+    def assert_columns(self, columns):
+        col_names = "Image Name,Type,Concentration,Image"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_row_count(self, rows):
         assert rows == 102
 
 
@@ -859,6 +890,10 @@ class Unicode(Plate2Wells):
             row_data=(u"A1,Control,0,მიკროსკოპის", u"A2,Treatment,10,პონი"),
             encoding="utf-8")
 
+    def assert_columns(self, columns):
+        col_names = "Well,Well Type,Concentration,Extra type,Well Name"
+        assert col_names == ",".join([c.name for c in columns])
+
 
 class UnicodeBOM(Plate2Wells):
 
@@ -869,6 +904,10 @@ class UnicodeBOM(Plate2Wells):
             col_names="Well,Well Type,Concentration,Extra type",
             row_data=("A1,Control,0,მიკროსკოპის", "A2,Treatment,10,პონი"),
             encoding="utf-8-sig")
+
+    def assert_columns(self, columns):
+        col_names = "Well,Well Type,Concentration,Extra type,Well Name"
+        assert col_names == ",".join([c.name for c in columns])
 
 
 class Project2Datasets(Fixture):
@@ -882,7 +921,11 @@ class Project2Datasets(Fixture):
                       "D002,A1,Control,0", "D002,A2,Treatment,10"))
         self.project = None
 
-    def assert_rows(self, rows):
+    def assert_columns(self, columns):
+        col_names = "Dataset Name,Image Name,Type,Concentration,Image"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_row_count(self, rows):
         # Hard-coded in create_csv's arguments
         assert rows == 4
 
@@ -1020,7 +1063,8 @@ class TestPopulateMetadataHelper(ITest):
     def _assert_parsing_context_values(self, t, fixture):
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
-        fixture.assert_rows(rows)
+        fixture.assert_row_count(rows)
+        fixture.assert_columns(cols)
         for hit in range(rows):
             row_values = [col.values[0] for col in t.read(
                 list(range(len(cols))), hit, hit+1).columns]
@@ -1149,7 +1193,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
 
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
-        fixture.assert_rows(rows)
+        fixture.assert_row_count(rows)
         data = [c.values for c in t.read(
             list(range(len(cols))), 0, rows).columns]
         row_values = list(zip(*data))
