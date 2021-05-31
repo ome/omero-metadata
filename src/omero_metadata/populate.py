@@ -896,7 +896,7 @@ class ImageWrapper(ValueWrapper):
         return self.rois_by_name[rname].id.val
 
     def get_roi_name_by_id(self, rid):
-        return self.rois_by_id[rid].name.val
+        return unwrap(self.rois_by_id[rid].name)
 
     def resolve_roi(self, column, row, value):
         try:
@@ -940,10 +940,10 @@ class ImageWrapper(ValueWrapper):
         for roi in data:
             rid = roi.id.val
             rois_by_id[rid] = roi
-            if roi.name.val in rois_by_name.keys():
+            if unwrap(roi.name) in rois_by_name.keys():
                 log.warn('Conflicting ROI names.')
                 self.ambiguous_naming = True
-            rois_by_name[roi.name.val] = roi
+            rois_by_name[unwrap(roi.name)] = roi
         self.rois_by_id = rois_by_id
         self.rois_by_name = rois_by_name
         log.debug('Completed parsing image: %s' % self.target_name)
@@ -1397,6 +1397,8 @@ class ParsingContext(object):
                     log.debug(roi_column)
                     rid = roi_column.values[i]
                     rname = self.value_resolver.get_roi_name_by_id(rid)
+                    if rname is None:
+                        rname = ""
                 except KeyError:
                     log.warn(
                         "%d not found in roi ids" % rid)
