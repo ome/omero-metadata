@@ -147,7 +147,7 @@ If the target is an Image, a csv with ROI-level and object-level data can be use
 The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
 column will be appended automatically (see example below). Alternatively, the input column can be
 ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
-In *both* cases, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
+In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 image.csv::
 
