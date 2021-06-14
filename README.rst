@@ -152,7 +152,7 @@ In this case, it is required that ROIs on the Image in OMERO have the ``Name`` a
 image.csv::
 
     # header roi,l,d,l
-    roi,object,probability,area
+    Roi,object,probability,area
     501,1,0.8,250
     502,1,0.9,500
     503,1,0.2,25
@@ -162,7 +162,7 @@ image.csv::
 This will create an OMERO.table linked to the Image like this:
 
 === ====== =========== ==== ========
-roi object probability area Roi Name
+Roi object probability area Roi Name
 === ====== =========== ==== ========
 501 1      0.8         250  Sample1
 502 1      0.9         500  Sample2

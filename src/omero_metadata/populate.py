@@ -298,20 +298,26 @@ class HeaderResolver(object):
             if column.__class__ is PlateColumn:
                 append.append(StringColumn(PLATE_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                column.name = "Plate"
             if column.__class__ is WellColumn:
                 append.append(StringColumn(WELL_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                column.name = "Well"
             if column.__class__ is ImageColumn:
                 append.append(StringColumn(IMAGE_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
-            # Currently hard-coded, but "if image name, then add image id"
-            if column.name == IMAGE_NAME_COLUMN:
-                append.append(ImageColumn("Image", '', list()))
+                # Ensure ImageColumn is named "Image"
+                column.name = "Image"
             if column.__class__ is RoiColumn:
                 append.append(StringColumn(ROI_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
+                # Ensure RoiColumn is named 'Roi'
+                column.name = "Roi"
+            # If image/roi name, then add ID column"
+            if column.name == IMAGE_NAME_COLUMN:
+                append.append(ImageColumn("Image", '', list()))
             if column.name == ROI_NAME_COLUMN:
-                append.append(RoiColumn("roi", '', list()))
+                append.append(RoiColumn("Roi", '', list()))
         if self.columns_sanity_check(columns):
             columns.extend(append)
         return columns
@@ -1174,11 +1180,11 @@ class ParsingContext(object):
             for column in self.columns:
                 if not values:
                     if isinstance(column, ImageColumn) or \
+                       isinstance(column, RoiColumn) or \
                        column.name in (PLATE_NAME_COLUMN,
                                        WELL_NAME_COLUMN,
                                        IMAGE_NAME_COLUMN,
-                                       ROI_NAME_COLUMN,
-                                       'roi'):
+                                       ROI_NAME_COLUMN):
                         # Then assume that the values will be calculated
                         # later based on another column.
                         continue
