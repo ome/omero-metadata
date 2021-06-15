@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.8.1
+-----
+
+* Do not require ROI.name if ROI is specified by ID
+* Use Roi for the name of the RoiColumn
+
 0.8.0
 -----
 
