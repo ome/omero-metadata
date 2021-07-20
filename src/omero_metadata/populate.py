@@ -1545,7 +1545,8 @@ class BulkToMapAnnotationContext(_QueryContext):
 
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
-                 batch_size=1000, loops=10, ms=10, dry_run=False):
+                 batch_size=1000, loops=10, ms=10, dry_run=False,
+                 allow_nan=False):
         """
         :param client: OMERO client object
         :param target_object: The object to be annotated
@@ -1877,7 +1878,8 @@ class DeleteMapAnnotationContext(_QueryContext):
 
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
-                 batch_size=1000, loops=10, ms=500, dry_run=False):
+                 batch_size=1000, loops=10, ms=500, dry_run=False,
+                 allow_nan=False):
 
         """
         :param client: OMERO client object
