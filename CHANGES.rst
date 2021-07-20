@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.8.2
+-----
+
+* Pass allow-nan to all contexts
+
 0.8.1
 -----
 
