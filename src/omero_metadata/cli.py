@@ -242,6 +242,9 @@ class MetadataControl(BaseControl):
         populate.add_argument("--allow_nan", action="store_true", help=(
             "Allow empty values to become Nan in Long or Double columns"))
 
+        populate.add_argument("--force_cols", action="store_true", help=(
+            "Force creation of column names which are forbidden by default"))
+
         populateroi.add_argument(
             "--measurement", type=int, default=None,
             help="Index of the measurement to populate. By default, all")
@@ -533,7 +536,8 @@ class MetadataControl(BaseControl):
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
                             loops=loops, ms=ms, dry_run=args.dry_run,
-                            allow_nan=args.allow_nan)
+                            allow_nan=args.allow_nan,
+                            force_cols=args.force_cols)
         ctx.parse()
 
     def rois(self, args):
