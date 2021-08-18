@@ -988,7 +988,7 @@ class ParsingContext(object):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None, batch_size=1000, loops=10, ms=500,
-                 dry_run=False, allow_nan=False):
+                 dry_run=False, allow_nan=False, table_name=None):
         '''
         This lines should be handled outside of the constructor:
 
@@ -1012,6 +1012,7 @@ class ParsingContext(object):
                                                        target_object,
                                                        self.value_resolver)
         self.dry_run = dry_run
+        self.table_name = table_name
 
     def create_annotation_link(self):
         self.target_class = self.target_object.__class__
@@ -1102,8 +1103,9 @@ class ParsingContext(object):
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         sr = sf.sharedResources()
-        table = sr.newTable(1, DEFAULT_TABLE_NAME,
-                            {'omero.group': native_str(group)})
+        name = self.table_name if self.table_name is not None \
+            else DEFAULT_TABLE_NAME
+        table = sr.newTable(1, name, {'omero.group': native_str(group)})
         if table is None:
             raise MetadataError(
                 "Unable to create table: %s" % DEFAULT_TABLE_NAME)
