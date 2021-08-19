@@ -988,7 +988,8 @@ class ParsingContext(object):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, column_types=None,
                  options=None, batch_size=1000, loops=10, ms=500,
-                 dry_run=False, allow_nan=False, table_name=None):
+                 dry_run=False, allow_nan=False,
+                 table_name=DEFAULT_TABLE_NAME):
         '''
         This lines should be handled outside of the constructor:
 
@@ -1103,9 +1104,8 @@ class ParsingContext(object):
         sf = self.client.getSession()
         group = str(self.value_resolver.target_group)
         sr = sf.sharedResources()
-        name = self.table_name if self.table_name is not None \
-            else DEFAULT_TABLE_NAME
-        table = sr.newTable(1, name, {'omero.group': native_str(group)})
+        table = sr.newTable(1, self.table_name,
+                            {'omero.group': native_str(group)})
         if table is None:
             raise MetadataError(
                 "Unable to create table: %s" % DEFAULT_TABLE_NAME)
