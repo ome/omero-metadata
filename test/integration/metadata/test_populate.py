@@ -672,6 +672,7 @@ class Dataset2Images(Fixture):
         self.dataset = None
         self.images = None
         self.names = ("A1", "A2")
+        self.table_name = "Dataset_2_Images"
 
     def assert_columns(self, columns):
         # adds "Image" column to table
@@ -755,6 +756,7 @@ class Image2Rois(Fixture):
         self.image = None
         self.rois = None
         self.names = ("roi1", "roi2")
+        self.table_name = None
 
     def assert_columns(self, columns):
         # Adds a new 'Roi' column
@@ -1025,9 +1027,18 @@ class TestPopulateMetadataHelper(ITest):
         """
 
         target = fixture.get_target()
+        kwargs = {}
+
         allow_nan = None
         if hasattr(fixture, 'allow_nan'):
             allow_nan = fixture.allow_nan
+        kwargs['allow_nan'] = allow_nan
+
+        expected_table_name = 'bulk_annotations'
+        if hasattr(fixture, 'table_name'):
+            kwargs['table_name'] = fixture.table_name
+            if fixture.table_name is not None:
+                expected_table_name = fixture.table_name
         # Deleting anns so that we can re-use the same user
         self.delete(fixture.get_annotations())
         child_anns = fixture.get_child_annotations()
@@ -1035,10 +1046,7 @@ class TestPopulateMetadataHelper(ITest):
         self.delete(child_anns)
 
         csv = fixture.get_csv()
-        ctx = ParsingContext(self.client,
-                             target,
-                             file=csv,
-                             allow_nan=(allow_nan is True))
+        ctx = ParsingContext(self.client, target, file=csv, **kwargs)
 
         if allow_nan is False:
             with raises(ValueError):
@@ -1054,6 +1062,11 @@ class TestPopulateMetadataHelper(ITest):
         table_file_ann = anns[0]
         assert unwrap(table_file_ann.getNs()) == NSBULKANNOTATIONS
         fileid = table_file_ann.file.id.val
+
+        # Load file to check name
+        query = self.client.sf.getQueryService()
+        table_name = query.get("OriginalFile", fileid).name.val
+        assert table_name == expected_table_name
 
         # Open table to check contents
         r = self.client.sf.sharedResources()
