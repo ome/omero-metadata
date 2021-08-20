@@ -1013,6 +1013,8 @@ class ParsingContext(object):
                                                        target_object,
                                                        self.value_resolver)
         self.dry_run = dry_run
+        if not table_name:
+            table_name = DEFAULT_TABLE_NAME     # just in case
         self.table_name = table_name
 
     def create_annotation_link(self):
