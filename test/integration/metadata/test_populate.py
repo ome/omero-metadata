@@ -1032,7 +1032,7 @@ class TestPopulateMetadataHelper(ITest):
         allow_nan = None
         if hasattr(fixture, 'allow_nan'):
             allow_nan = fixture.allow_nan
-        kwargs['allow_nan'] = allow_nan
+            kwargs['allow_nan'] = allow_nan
 
         expected_table_name = 'bulk_annotations'
         if hasattr(fixture, 'table_name'):
