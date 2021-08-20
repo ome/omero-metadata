@@ -1018,7 +1018,7 @@ class TestPopulateMetadataConfigLoad(ITest):
 
 class TestPopulateMetadataHelper(ITest):
 
-    def _test_parsing_context(self, fixture, batch_size):
+    def _test_parsing_context(self, fixture):
         """
             Create a small csv file, use populate_metadata.py to parse and
             attach to Plate. Then query to check table has expected content.
@@ -1174,7 +1174,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         now just run them all together
         """
         fixture.init(self)
-        t = self._test_parsing_context(fixture, batch_size)
+        t = self._test_parsing_context(fixture)
         if t is None:
             return
         self._assert_parsing_context_values(t, fixture)
@@ -1189,7 +1189,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         annotations on multiple OMERO data types
         """
         fixture.init(self)
-        t = self._test_parsing_context(fixture, 2)
+        t = self._test_parsing_context(fixture)
 
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
@@ -1210,7 +1210,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         """
         fixture_empty = Plate2WellsNs2UnavailableHeader()
         fixture_empty.init(self)
-        self._test_parsing_context(fixture_empty, 2)
+        self._test_parsing_context(fixture_empty)
         self._test_bulk_to_map_annotation_context(fixture_empty, 2)
 
     def test_populate_metadata_ns_anns_fail(self):
@@ -1220,7 +1220,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         """
         fixture_fail = Plate2WellsNs2Fail()
         fixture_fail.init(self)
-        self._test_parsing_context(fixture_fail, 2)
+        self._test_parsing_context(fixture_fail)
         with raises(MapAnnotationPrimaryKeyException):
             self._test_bulk_to_map_annotation_context(fixture_fail, 2)
 
@@ -1348,12 +1348,12 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         """
         fixture1 = Plate2WellsNs2()
         fixture1.init(self)
-        self._test_parsing_context(fixture1, 2)
+        self._test_parsing_context(fixture1)
         self._test_bulk_to_map_annotation_context(fixture1, 2)
 
         fixture2 = Plate2WellsNs2()
         fixture2.init(self)
-        self._test_parsing_context(fixture2, 2)
+        self._test_parsing_context(fixture2)
         self._test_bulk_to_map_annotation_dedup(fixture1, fixture2, ns)
 
     @mark.parametrize("ns", [None, NSBULKANNOTATIONS, MAPR_NS_GENE])
@@ -1364,12 +1364,12 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         """
         fixture1 = Plate2WellsNs2()
         fixture1.init(self)
-        self._test_parsing_context(fixture1, 2)
+        self._test_parsing_context(fixture1)
         self._test_bulk_to_map_annotation_context(fixture1, 2)
 
         fixture2 = Plate2WellsNs2()
         fixture2.init(self)
-        self._test_parsing_context(fixture2, 2)
+        self._test_parsing_context(fixture2)
         self._test_bulk_to_map_annotation_dedup(fixture1, fixture2, None)
         self._test_delete_map_annotation_context_dedup(
             fixture1, fixture2, ns)
