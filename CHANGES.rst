@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.9.0
+-----
+
+* Add support for specifying the table name in ParsingContext
+
 0.8.2
 -----
 
