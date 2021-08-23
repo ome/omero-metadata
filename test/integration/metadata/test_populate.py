@@ -672,6 +672,7 @@ class Dataset2Images(Fixture):
         self.dataset = None
         self.images = None
         self.names = ("A1", "A2")
+        self.table_name = "Dataset_2_Images"
 
     def assert_columns(self, columns):
         # adds "Image" column to table
@@ -755,6 +756,7 @@ class Image2Rois(Fixture):
         self.image = None
         self.rois = None
         self.names = ("roi1", "roi2")
+        self.table_name = None
 
     def assert_columns(self, columns):
         # Adds a new 'Roi' column
@@ -1018,16 +1020,25 @@ class TestPopulateMetadataConfigLoad(ITest):
 
 class TestPopulateMetadataHelper(ITest):
 
-    def _test_parsing_context(self, fixture, batch_size):
+    def _test_parsing_context(self, fixture):
         """
             Create a small csv file, use populate_metadata.py to parse and
             attach to Plate. Then query to check table has expected content.
         """
 
         target = fixture.get_target()
+        kwargs = {}
+
         allow_nan = None
         if hasattr(fixture, 'allow_nan'):
             allow_nan = fixture.allow_nan
+            kwargs['allow_nan'] = allow_nan
+
+        expected_table_name = 'bulk_annotations'
+        if hasattr(fixture, 'table_name'):
+            kwargs['table_name'] = fixture.table_name
+            if fixture.table_name is not None:
+                expected_table_name = fixture.table_name
         # Deleting anns so that we can re-use the same user
         self.delete(fixture.get_annotations())
         child_anns = fixture.get_child_annotations()
@@ -1035,10 +1046,7 @@ class TestPopulateMetadataHelper(ITest):
         self.delete(child_anns)
 
         csv = fixture.get_csv()
-        ctx = ParsingContext(self.client,
-                             target,
-                             file=csv,
-                             allow_nan=(allow_nan is True))
+        ctx = ParsingContext(self.client, target, file=csv, **kwargs)
 
         if allow_nan is False:
             with raises(ValueError):
@@ -1054,6 +1062,11 @@ class TestPopulateMetadataHelper(ITest):
         table_file_ann = anns[0]
         assert unwrap(table_file_ann.getNs()) == NSBULKANNOTATIONS
         fileid = table_file_ann.file.id.val
+
+        # Load file to check name
+        query = self.client.sf.getQueryService()
+        table_name = query.get("OriginalFile", fileid).name.val
+        assert table_name == expected_table_name
 
         # Open table to check contents
         r = self.client.sf.sharedResources()
@@ -1174,7 +1187,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         now just run them all together
         """
         fixture.init(self)
-        t = self._test_parsing_context(fixture, batch_size)
+        t = self._test_parsing_context(fixture)
         if t is None:
             return
         self._assert_parsing_context_values(t, fixture)
@@ -1189,7 +1202,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         annotations on multiple OMERO data types
         """
         fixture.init(self)
-        t = self._test_parsing_context(fixture, 2)
+        t = self._test_parsing_context(fixture)
 
         cols = t.getHeaders()
         rows = t.getNumberOfRows()
@@ -1210,7 +1223,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         """
         fixture_empty = Plate2WellsNs2UnavailableHeader()
         fixture_empty.init(self)
-        self._test_parsing_context(fixture_empty, 2)
+        self._test_parsing_context(fixture_empty)
         self._test_bulk_to_map_annotation_context(fixture_empty, 2)
 
     def test_populate_metadata_ns_anns_fail(self):
@@ -1220,7 +1233,7 @@ class TestPopulateMetadata(TestPopulateMetadataHelper):
         """
         fixture_fail = Plate2WellsNs2Fail()
         fixture_fail.init(self)
-        self._test_parsing_context(fixture_fail, 2)
+        self._test_parsing_context(fixture_fail)
         with raises(MapAnnotationPrimaryKeyException):
             self._test_bulk_to_map_annotation_context(fixture_fail, 2)
 
@@ -1348,12 +1361,12 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         """
         fixture1 = Plate2WellsNs2()
         fixture1.init(self)
-        self._test_parsing_context(fixture1, 2)
+        self._test_parsing_context(fixture1)
         self._test_bulk_to_map_annotation_context(fixture1, 2)
 
         fixture2 = Plate2WellsNs2()
         fixture2.init(self)
-        self._test_parsing_context(fixture2, 2)
+        self._test_parsing_context(fixture2)
         self._test_bulk_to_map_annotation_dedup(fixture1, fixture2, ns)
 
     @mark.parametrize("ns", [None, NSBULKANNOTATIONS, MAPR_NS_GENE])
@@ -1364,12 +1377,12 @@ class TestPopulateMetadataDedup(TestPopulateMetadataHelperPerMethod):
         """
         fixture1 = Plate2WellsNs2()
         fixture1.init(self)
-        self._test_parsing_context(fixture1, 2)
+        self._test_parsing_context(fixture1)
         self._test_bulk_to_map_annotation_context(fixture1, 2)
 
         fixture2 = Plate2WellsNs2()
         fixture2.init(self)
-        self._test_parsing_context(fixture2, 2)
+        self._test_parsing_context(fixture2)
         self._test_bulk_to_map_annotation_dedup(fixture1, fixture2, None)
         self._test_delete_map_annotation_context_dedup(
             fixture1, fixture2, ns)
