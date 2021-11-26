@@ -253,6 +253,7 @@ class HeaderResolver(object):
         return self._create_columns("image")
 
     def _create_columns(self, klass):
+        target_class = self.target_object.__class__
         if self.types is not None and len(self.types) != len(self.headers):
             message = "Number of columns and column types not equal."
             raise MetadataError(message)
@@ -308,7 +309,7 @@ class HeaderResolver(object):
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure ImageColumn is named "Image"
                 column.name = "Image"
-            if column.__class__ is RoiColumn:
+            if column.__class__ is RoiColumn and target_class != DatasetI:
                 append.append(StringColumn(ROI_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure RoiColumn is named 'Roi'
@@ -758,6 +759,10 @@ class DatasetWrapper(PDIWrapper):
         self.images_by_id = dict()
         self.images_by_name = dict()
         self._load()
+
+    def resolve_roi(self, column, row, value):
+        # Support Dataset table with known ROI IDs
+        return int(value)
 
     def get_image_id_by_name(self, iname, dname=None):
         return self.images_by_name[iname].id.val
