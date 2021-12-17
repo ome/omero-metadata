@@ -701,6 +701,10 @@ class PlateWrapper(SPWWrapper):
         wells = self.wells_by_id[plate]
         return wells[well_id]
 
+    def get_image_id_by_name(self, iname, pid=None):
+        plate = self.target_object.id.val
+        return self.images_by_name[plate][iname].id.val
+
     def subselect(self, rows, names):
         """
         If we're processing a plate but the bulk-annotations file contains
@@ -1400,13 +1404,11 @@ class ParsingContext(object):
                 iname = image_name_column.values[i]
                 iid = -1
                 try:
+                    # If target class is Screen, a plate column should exist
                     if "plate" in columns_by_name:
                         pid = int(columns_by_name["plate"].values[i])
-                    elif "plate name" in columns_by_name \
-                            and target_class is not PlateI:
-                        pname = columns_by_name["plate name"].values[i]
-                        pid = self.value_resolver.wrapper.plates_by_name[
-                            pname].id.val
+                    elif target_class is PlateI:
+                        pid = self.target_object.id.val
                     log.debug("Using Plate:%d" % pid)
                     iid = self.value_resolver.get_image_id_by_name(
                         iname, pid)
