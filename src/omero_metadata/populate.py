@@ -27,7 +27,7 @@ from __future__ import print_function
 from builtins import chr
 from builtins import str
 from builtins import range
-from future.utils import isidentifier, native_str
+from future.utils import native_str
 from past.builtins import basestring
 from builtins import object
 import logging
@@ -563,7 +563,8 @@ class SPWWrapper(ValueWrapper):
             raise Exception("Cannot resolve image to plate")
         return self.images_by_id[pid][iid].name.val
 
-    def parse_plate(self, plate, wells_by_location, wells_by_id, images_by_id, images_by_name):
+    def parse_plate(self, plate, wells_by_location, wells_by_id,
+                    images_by_id, images_by_name):
         """
         Accepts PlateData instances
         """
@@ -686,7 +687,8 @@ class ScreenWrapper(SPWWrapper):
             images_by_name = dict()
             self.images_by_name[plate.id.val] = images_by_name
             self.parse_plate(
-                plate, wells_by_location, wells_by_id, images_by_id, images_by_name
+                plate, wells_by_location, wells_by_id,
+                images_by_id, images_by_name
             )
 
 
@@ -1139,7 +1141,7 @@ class ParsingContext(object):
                     return self.parse_from_handle_stream(f2)
 
     def preprocess_data(self, reader):
-        for row in reader:
+        for i, row in enumerate(reader):
             row = [(self.columns[i], value) for i, value in enumerate(row)]
             for column, original_value in row:
                 log.debug('Original value %s, %s',
@@ -1362,9 +1364,10 @@ class ParsingContext(object):
                     resolve_image_ids and not resolve_image_names:
                 # PDI - need to know Image IDs from Names
                 iid = -1
-                log.debug(image_column)
-                iname = image_name_column.values[i]
                 try:
+                    log.debug(image_column)
+                    iname = image_name_column.values[i]
+                    did = self.target_object.id.val
                     if "dataset name" in columns_by_name \
                             and target_class is not DatasetI:
                         dname = columns_by_name["dataset name"].values[i]

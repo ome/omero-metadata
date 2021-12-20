@@ -37,6 +37,7 @@ import re
 import shutil
 
 from omero.api import RoiOptions
+from omero.gateway import BlitzGateway
 from omero.grid import ImageColumn
 from omero.grid import RoiColumn
 from omero.grid import StringColumn
@@ -143,12 +144,26 @@ class Fixture(object):
                                          plate_cols=col_count)[0]
         plate2 = self.test.import_plates(plate_rows=row_count,
                                          plate_cols=col_count)[0]
+        # Rename Images like "A1_Field-0" to match names in csv
+        conn = BlitzGateway(client_obj=self.test.client)
+        update = conn.getUpdateService()
+        images_by_id = {}
+        for pid in [plate1.id.val, plate2.id.val]:
+            plate = conn.getObject("Plate", pid)
+            for well in plate.listChildren():
+                for field_index, ws in enumerate(well.listChildren()):
+                    img = ws.getImage()._obj
+                    img.name = rstring(f'{ well.getWellPos() }_Field-{field_index}')
+                    img = update.saveAndReturnObject(img)
+                    images_by_id[img.id.val] = img
         plate1 = self.set_name(plate1, "P001")
         plate2 = self.set_name(plate2, "P002")
         screen = ScreenI()
         screen.name = rstring("Screen")
         screen.linkPlate(plate1.proxy())
         screen.linkPlate(plate2.proxy())
+        # cache images_by_id for checking result
+        self.images_by_id = images_by_id
         return self.test.client.sf.getUpdateService().\
             saveAndReturnObject(screen)
 
@@ -173,6 +188,20 @@ class Fixture(object):
     def assert_columns(self, columns):
         col_names = "Well,Well Type,Concentration,Well Name"
         assert col_names == ",".join([c.name for c in columns])
+
+    def assert_table_row(self, row_values, row_index):
+        # Check rows, based on self.create_csv()
+        # Unsure where the lower-casing is happening
+        if "A1" in row_values or "a1" in row_values:
+            assert "Control" in row_values
+        elif "A2" in row_values or "a2" in row_values:
+            assert "Treatment" in row_values
+        elif "roi1" in row_values:
+            assert 0.5 in row_values
+            assert 100 in row_values
+        elif "roi2" in row_values:
+            assert 'nan' in [str(value) for value in row_values]
+            assert 200 in row_values
 
     def assert_child_annotations(self, oas):
         for ma, wid, wr, wc in oas:
@@ -200,14 +229,14 @@ class Fixture(object):
 class Screen2Plates(Fixture):
 
     def __init__(self):
-        self.count = 6
+        self.count = 8
         self.ann_count = 4
         self.row_count = 1
         self.col_count = 2
         self.csv = self.create_csv(
-            col_names="Plate,Well,Well Type,Concentration",
-            row_data=("P001,A1,Control,0", "P001,A2,Treatment,10",
-                      "P002,A1,Control,0", "P002,A2,Treatment,10"))
+            col_names="Plate,Well,Image Name,Well Type,Concentration",
+            row_data=("P001,A1,A1_Field-0,Control,0", "P001,A2,A2_Field-0,Treatment,10",
+                      "P002,A1,A1_Field-0,Control,0", "P002,A2,A2_Field-0,Treatment,10"))
         self.screen = None
 
     def assert_row_count(self, rows):
@@ -217,9 +246,17 @@ class Screen2Plates(Fixture):
         assert rows == 2 * self.row_count * self.col_count
 
     def assert_columns(self, columns):
-        # Adds Plate Name,Well Name columns
-        col_names = "Plate,Well,Well Type,Concentration,Plate Name,Well Name"
+        # Adds Plate Name,Well Name, Image columns
+        col_names = "Plate,Well,Image Name,Well Type,Concentration,Plate Name,Well Name,Image"
         assert col_names == ",".join([c.name for c in columns])
+
+    def assert_table_row(self, row_values, row_index):
+        super(Screen2Plates, self).assert_table_row(row_values, row_index)
+        # last column should contain valid Image ID
+        image_id = row_values[-1]
+        image_name = row_values[2]
+        assert image_id in self.images_by_id
+        assert self.images_by_id[image_id].name.val == image_name
 
     def get_target(self):
         if not self.screen:
@@ -1082,17 +1119,7 @@ class TestPopulateMetadataHelper(ITest):
             row_values = [col.values[0] for col in t.read(
                 list(range(len(cols))), hit, hit+1).columns]
             assert len(row_values) == fixture.count
-            # Unsure where the lower-casing is happening
-            if "A1" in row_values or "a1" in row_values:
-                assert "Control" in row_values
-            elif "A2" in row_values or "a2" in row_values:
-                assert "Treatment" in row_values
-            elif "roi1" in row_values:
-                assert 0.5 in row_values
-                assert 100 in row_values
-            elif "roi2" in row_values:
-                assert 'nan' in [str(value) for value in row_values]
-                assert 200 in row_values
+            fixture.assert_table_row(row_values, hit)
 
     def _test_bulk_to_map_annotation_context(self, fixture, batch_size):
         # self._testPopulateMetadataPlate()
