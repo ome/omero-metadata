@@ -153,7 +153,8 @@ class Fixture(object):
             for well in plate.listChildren():
                 for field_index, ws in enumerate(well.listChildren()):
                     img = ws.getImage()._obj
-                    img.name = rstring(f'{ well.getWellPos() }_Field-{field_index}')
+                    img.name = rstring(
+                        f'{ well.getWellPos() }_Field-{field_index}')
                     img = update.saveAndReturnObject(img)
                     images_by_id[img.id.val] = img
         plate1 = self.set_name(plate1, "P001")
@@ -235,8 +236,10 @@ class Screen2Plates(Fixture):
         self.col_count = 2
         self.csv = self.create_csv(
             col_names="Plate,Well,Image Name,Well Type,Concentration",
-            row_data=("P001,A1,A1_Field-0,Control,0", "P001,A2,A2_Field-0,Treatment,10",
-                      "P002,A1,A1_Field-0,Control,0", "P002,A2,A2_Field-0,Treatment,10"))
+            row_data=("P001,A1,A1_Field-0,Control,0",
+                      "P001,A2,A2_Field-0,Treatment,10",
+                      "P002,A1,A1_Field-0,Control,0",
+                      "P002,A2,A2_Field-0,Treatment,10"))
         self.screen = None
 
     def assert_row_count(self, rows):
@@ -247,7 +250,8 @@ class Screen2Plates(Fixture):
 
     def assert_columns(self, columns):
         # Adds Plate Name,Well Name, Image columns
-        col_names = "Plate,Well,Image Name,Well Type,Concentration,Plate Name,Well Name,Image"
+        col_names = ("Plate,Well,Image Name,Well Type,"
+                     "Concentration,Plate Name,Well Name,Image")
         assert col_names == ",".join([c.name for c in columns])
 
     def assert_table_row(self, row_values, row_index):
