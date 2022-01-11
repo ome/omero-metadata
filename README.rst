@@ -118,7 +118,7 @@ If the target is a Dataset instead of a Project, the ``Dataset Name`` column is 
 
 Alternatively, if you already know the Image IDs, these can be specified
 in an ``image`` column, and an ``Image Name`` column will be added.
-This is only supported for a Dataset::
+This is only supported for a Dataset.
 
 dataset.csv::
 
@@ -128,7 +128,7 @@ dataset.csv::
     1278,0.142,2,GFP
     1279,0.093,3,TRITC
 
-This will create an OMERO.table with new ``Image Name`` column::
+This will create an OMERO.table with new ``Image Name`` column:
 
 ===== ======== ============= ============ ===========
 Image ROI_Area Channel_Index Channel_Name Image Name
