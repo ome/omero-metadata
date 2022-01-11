@@ -791,7 +791,6 @@ class DatasetWrapper(PDIWrapper):
             log.warn('Wrong input type for Shape ID: %s' % value)
             return Skip()
 
-
     def get_image_id_by_name(self, iname, dname=None):
         return self.images_by_name[iname].id.val
 
@@ -873,7 +872,8 @@ class DatasetWrapper(PDIWrapper):
             self.rois_by_id[rid] = roi
             self.shapes_by_id[sid] = shape
 
-        log.debug('Completed loading ROIs and Shapes in Dataset: %s' % self.target_object.id.val)
+        log.debug('Completed loading ROIs and Shapes in Dataset: %s'
+                  % self.target_object.id.val)
 
 
 class ProjectWrapper(PDIWrapper):
@@ -1233,7 +1233,8 @@ class ParsingContext(object):
                     log.error('Original value "%s" now "%s" of bad type!' % (
                         original_value, value))
                     raise
-            # we call post_process each single (mostly empty) row to get ids -> names
+            # we call post_process on each single (mostly empty) row
+            # to get ids -> names
             self.post_process()
             for column in self.columns:
                 column.values = []
