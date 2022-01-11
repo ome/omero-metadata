@@ -170,36 +170,44 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
-If the target is an Image, a csv with ROI-level and object-level data can be used to create an
+**ROIs**
+
+If the target is an Image or a Dataset, a csv with ROI-level and object-level data can be used to create an
 ``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image.
 The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
-column will be appended automatically (see example below). Alternatively, the input column can be
+column will be appended automatically (see example below). If a column named ``shape``
+of type ``l`` is included, the Shape IDs will be validated and if an ``image`` ID
+column is included, an ``Image Name`` column will be added as above.
+
+Alternatively, the ROI input column can be
 ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
 In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 image.csv::
 
-    # header roi,l,d,l
-    Roi,object,probability,area
-    501,1,0.8,250
-    502,1,0.9,500
-    503,1,0.2,25
-    503,2,0.8,400
-    503,3,0.5,200
+    # header roi,l,l,d,l
+    Roi,shape,object,probability,area
+    501,1066,1,0.8,250
+    502,1067,2,0.9,500
+    503,1068,3,0.2,25
+    503,1069,4,0.8,400
+    503,1070,5,0.5,200
 
 This will create an OMERO.table linked to the Image like this:
 
-=== ====== =========== ==== ========
-Roi object probability area Roi Name
-=== ====== =========== ==== ========
-501 1      0.8         250  Sample1
-502 1      0.9         500  Sample2
-503 1      0.2         25   Sample3
-503 2      0.8         400  Sample3
-503 3      0.5         200  Sample3
-=== ====== =========== ==== ========
+=== ===== ====== =========== ==== ========
+Roi shape object probability area Roi Name
+=== ===== ====== =========== ==== ========
+501 1066  1      0.8         250  Sample1
+502 1067  2      0.9         500  Sample2
+503 1068  3      0.2         25   Sample3
+503 1069  4      0.8         400  Sample3
+503 1070  5      0.5         200  Sample3
+=== ===== ====== =========== ==== ========
 
-Note that the ROI-level ``OMERO.table`` is not visible in the OMERO.web UI right-hand panel, but can be visualized by clicking the "eye" on the bulk annotation attachment on the Image.
+Note that the ROI-level data from an ``OMERO.table`` is not visible
+in the OMERO.web UI right-hand panel under the ``Tables`` tab,
+but the table can be visualized by clicking the "eye" on the bulk annotation attachment on the Image.
 
 Developer install
 =================
