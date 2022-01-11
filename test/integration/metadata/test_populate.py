@@ -37,6 +37,7 @@ import re
 import shutil
 
 from omero.api import RoiOptions
+from omero.gateway import BlitzGateway
 from omero.grid import ImageColumn
 from omero.grid import RoiColumn
 from omero.grid import StringColumn
@@ -765,7 +766,7 @@ class Image2Rois(Fixture):
 
     def assert_row_count(self, rows):
         # Hard-coded in createCsv's arguments
-        assert rows == 2
+        assert rows == len(self.names)
 
     def get_target(self):
         if not self.image:
@@ -808,6 +809,120 @@ class Image2Rois(Fixture):
 
     def assert_child_annotations(self, oas):
         assert len(oas) == 0
+
+
+class RoiIdsInImage(Image2Rois):
+
+    def __init__(self):
+        self.count = 5
+        self.ann_count = 0
+        self.image = None
+        self.rois = None
+        self.names = ("nucleus", "ER", "nucleolus")
+        self.table_name = None
+        # csv is created on demand, after ROIs created so we know IDs
+        self.csv = None
+
+    def get_csv(self):
+        if self.csv is None:
+            # need ROI IDs...
+            self.get_target()
+            row_data = ["%s,Cell,0.5,100" % roi.id.val for roi in self.rois]
+            # rows with invalid IDs will be Skipped
+            row_data.append("1,Invalid_ROI_ID,0.5,100")
+            self.csv = self.create_csv(
+                col_names="Roi,Feature,RoiArea,Count",
+                row_data=row_data,
+                header="# header roi,s,d,l"
+            )
+        return self.csv
+
+    def assert_columns(self, columns):
+        # Adds a new 'Roi Name' column
+        col_names = "Roi,Feature,RoiArea,Count,Roi Name"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_child_annotations(self, oas):
+        assert len(oas) == 0
+
+
+class RoiIdsInDataset(RoiIdsInImage):
+    """Tests roi column with ROI IDs in a Dataset"""
+
+    def __init__(self):
+        self.count = 6
+        self.ann_count = 0
+        self.dataset = None
+        self.rois = None
+        self.roi_names = ("nucleus", "ER", "nucleolus")
+        self.table_name = None
+        # csv is created on demand, after ROIs created so we know IDs
+        self.csv = None
+
+    def get_target(self):
+        if not self.dataset:
+            dataset = self.create_dataset(names=["ImageOne", "ImageTwo"])
+            self.set_name(dataset, "DatasetWithROIs")
+            # reload dataset to avoid unloaded exceptions etc.
+            self.dataset = self.test.client.sf.getQueryService().get(
+                'Dataset', dataset.id.val)
+            self.rois = self.create_rois()
+        return self.dataset
+
+    def get_csv(self):
+        if self.csv is None:
+            # need ROI IDs...
+            self.get_target()
+            row_data = ["%s,%s,Cell,0.5,100" % (roi.id.val, roi.image.id.val) for roi in self.rois]
+            # rows with invalid IDs will be Skipped
+            row_data.append("1,1,Invalid_ROI_ID,0.5,100")
+            self.csv = self.create_csv(
+                col_names="Roi,Image,Feature,RoiArea,Count",
+                row_data=row_data,
+                header="# header roi,image,s,d,l"
+            )
+        return self.csv
+
+    def create_rois(self):
+        if not self.dataset:
+            return []
+        rois = []
+        conn = BlitzGateway(client_obj=self.test.client)
+        ds = conn.getObject("Dataset", self.dataset.id)
+        for image in ds.listChildren():
+            for roi_name in self.roi_names:
+                roi = RoiI()
+                roi.name = rstring(roi_name)
+                roi.setImage(ImageI(image.id, False))
+                point = PointI()
+                point.x = rdouble(1)
+                point.y = rdouble(2)
+                roi.addShape(point)
+                rois.append(roi)
+        us = self.test.client.sf.getUpdateService()
+        return us.saveAndReturnArray(rois)
+
+    def assert_columns(self, columns):
+        # Adds a new 'Image Name' column as we have an 'image' ID column
+        # but NOT 'Roi Name' as above for Image
+        # see https://github.com/ome/omero-metadata/issues/65
+        col_names = "Roi,Image,Feature,RoiArea,Count,Image Name"
+        assert col_names == ",".join([c.name for c in columns])
+
+    def assert_row_count(self, rows):
+        # we created csv row for all ROIs.
+        # Extra rows with invalid IDs are NOT Skipped
+        assert rows == len(self.rois) + 1
+
+    def get_annotations(self):
+        query = """select d from Dataset d
+            left outer join fetch d.annotationLinks links
+            left outer join fetch links.child
+            where d.id=%s""" % self.dataset.id.val
+        qs = self.test.client.sf.getQueryService()
+        ds = qs.findByQuery(query, None)
+        anns = ds.linkedAnnotationList()
+        return anns
 
 
 class Image2RoisNoNan(Image2Rois):
