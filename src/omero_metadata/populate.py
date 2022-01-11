@@ -459,6 +459,8 @@ class ValueResolver(object):
             return self.wrapper.resolve_dataset(column, row, value)
         if RoiColumn is column_class:
             return self.wrapper.resolve_roi(column, row, value)
+        if column_as_lower == 'shape':
+            return self.wrapper.resolve_shape(value)
         if column_as_lower in ('row', 'column') \
            and column_class is LongColumn:
             try:
@@ -758,11 +760,37 @@ class DatasetWrapper(PDIWrapper):
         super(DatasetWrapper, self).__init__(value_resolver)
         self.images_by_id = dict()
         self.images_by_name = dict()
+        self.rois_by_id = None
+        self.shapes_by_id = None
         self._load()
 
     def resolve_roi(self, column, row, value):
         # Support Dataset table with known ROI IDs
-        return int(value)
+        print("DatasetWrapper resolve_rois", value)
+        if self.rois_by_id is None:
+            self._load_rois()
+        try:
+            return self.rois_by_id[int(value)].id.val
+        except KeyError:
+            log.warn('Dataset is missing ROI: %s' % value)
+            return Skip()
+        except ValueError:
+            log.warn('Wrong input type for ROI ID: %s' % value)
+            return Skip()
+
+    def resolve_shape(self, value):
+        # Support Dataset table with known Shape IDs
+        if self.rois_by_id is None:
+            self._load_rois()
+        try:
+            return self.shapes_by_id[int(value)].id.val
+        except KeyError:
+            log.warn('Dataset is missing Shape: %s' % value)
+            return Skip()
+        except ValueError:
+            log.warn('Wrong input type for Shape ID: %s' % value)
+            return Skip()
+
 
     def get_image_id_by_name(self, iname, dname=None):
         return self.images_by_name[iname].id.val
@@ -810,6 +838,42 @@ class DatasetWrapper(PDIWrapper):
             self.images_by_name[iname] = image
         self.images_by_id[self.target_object.id.val] = images_by_id
         log.debug('Completed parsing dataset: %s' % self.target_name)
+
+    def _load_rois(self):
+        log.debug('Loading ROIs in Dataset:%d' % self.target_object.id.val)
+        self.rois_by_id = {}
+        self.shapes_by_id = {}
+        query_service = self.client.getSession().getQueryService()
+        parameters = omero.sys.ParametersI()
+        parameters.addId(self.target_object.id.val)
+        data = list()
+        while True:
+            parameters.page(len(data), 1000)
+            rv = unwrap(query_service.projection((
+                'select distinct i, r, s '
+                'from Shape s '
+                'join s.roi as r '
+                'join r.image as i '
+                'join i.datasetLinks as dil '
+                'join dil.parent as d '
+                'where d.id = :id order by r.id desc'),
+                parameters, {'omero.group': '-1'}))
+            if len(rv) == 0:
+                break
+            else:
+                data.extend(rv)
+        if not data:
+            print("No ROIs on images in target Dataset")
+            # raise MetadataError('Could not find target object!')
+
+        for image, roi, shape in data:
+            # we only care about *IDs* of ROIs and Shapes in the Dataset
+            rid = roi.id.val
+            sid = shape.id.val
+            self.rois_by_id[rid] = roi
+            self.shapes_by_id[sid] = shape
+
+        log.debug('Completed loading ROIs and Shapes in Dataset: %s' % self.target_object.id.val)
 
 
 class ProjectWrapper(PDIWrapper):
@@ -1153,8 +1217,8 @@ class ParsingContext(object):
                     if isinstance(value, basestring):
                         column.size = max(
                             column.size, len(value.encode('utf-8')))
-                    # The following are needed for
-                    # getting post process column sizes
+                    # The following IDs are needed for
+                    # post_process() to get column sizes for names
                     if column.__class__ is WellColumn:
                         column.values.append(value)
                     elif column.__class__ is ImageColumn:
@@ -1169,6 +1233,7 @@ class ParsingContext(object):
                     log.error('Original value "%s" now "%s" of bad type!' % (
                         original_value, value))
                     raise
+            # we call post_process each single (mostly empty) row to get ids -> names
             self.post_process()
             for column in self.columns:
                 column.values = []

@@ -850,7 +850,7 @@ class RoiIdsInDataset(RoiIdsInImage):
     """Tests roi column with ROI IDs in a Dataset"""
 
     def __init__(self):
-        self.count = 6
+        self.count = 7
         self.ann_count = 0
         self.dataset = None
         self.rois = None
@@ -873,13 +873,22 @@ class RoiIdsInDataset(RoiIdsInImage):
         if self.csv is None:
             # need ROI IDs...
             self.get_target()
-            row_data = ["%s,%s,Cell,0.5,100" % (roi.id.val, roi.image.id.val) for roi in self.rois]
+            row_data = []
+            for roi in self.rois:
+                shape_id = roi.copyShapes()[0].id.val
+                row_data.append("%s,%s,%s,Cell,0.5,100" % (
+                    roi.id.val, shape_id, roi.image.id.val))
             # rows with invalid IDs will be Skipped
-            row_data.append("1,1,Invalid_ROI_ID,0.5,100")
+            for count, roi in enumerate(self.rois):
+                shape_id = roi.copyShapes()[0].id.val
+                ids = [shape_id, roi.id.val, roi.image.id.val]
+                # set either shape, roi or image ID to be invalid
+                ids[count % 3] = 1
+                row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
             self.csv = self.create_csv(
-                col_names="Roi,Image,Feature,RoiArea,Count",
+                col_names="Roi,shape,Image,Feature,RoiArea,Count",
                 row_data=row_data,
-                header="# header roi,image,s,d,l"
+                header="# header roi,l,image,s,d,l"
             )
         return self.csv
 
@@ -906,13 +915,13 @@ class RoiIdsInDataset(RoiIdsInImage):
         # Adds a new 'Image Name' column as we have an 'image' ID column
         # but NOT 'Roi Name' as above for Image
         # see https://github.com/ome/omero-metadata/issues/65
-        col_names = "Roi,Image,Feature,RoiArea,Count,Image Name"
+        col_names = "Roi,shape,Image,Feature,RoiArea,Count,Image Name"
         assert col_names == ",".join([c.name for c in columns])
 
     def assert_row_count(self, rows):
         # we created csv row for all ROIs.
-        # Extra rows with invalid IDs are NOT Skipped
-        assert rows == len(self.rois) + 1
+        # Extra rows with invalid IDs are Skipped
+        assert rows == len(self.rois)
 
     def get_annotations(self):
         query = """select d from Dataset d
