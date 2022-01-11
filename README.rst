@@ -65,8 +65,8 @@ populate
 
 This command creates an ``OMERO.table`` (bulk annotation) from a ``CSV`` file and links 
 the table as a ``File Annotation`` to a parent container such as Screen, Plate, Project
-or Dataset. It also attempts to convert Image or Well names from the ``CSV`` into
-Image or Well IDs in the ``OMERO.table``.
+Dataset or Image. It also attempts to convert Image, Well or ROI names from the ``CSV`` into
+object IDs in the ``OMERO.table``.
 
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
@@ -86,10 +86,10 @@ The ``# header`` row is optional. Default column type is ``String``.
 NB: Column names should not contain spaces if you want to be able to query
 by these columns.
 
-Examples:
+**Project / Dataset**
 
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
-and ``Image Name``::
+and ``Image Name`` or ``Image ID``::
 
     $ omero metadata populate Project:1 --file path/to/project.csv
 
@@ -102,7 +102,8 @@ project.csv::
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
 
-This will create an OMERO.table linked to the Project like this:
+This will create an OMERO.table linked to the Project like this with
+a new ``Image`` column with IDs:
 
 ========== ============ ======== ============= ============ =====
 Image Name Dataset Name ROI_Area Channel_Index Channel_Name Image
@@ -114,6 +115,33 @@ img-04.png dataset01    0.429    4             Cy5          36641
 ========== ============ ======== ============= ============ =====
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
+
+Alternatively, if you already know the Image IDs, these can be specified
+in an ``image`` column, and an ``Image Name`` column will be added.
+This is only supported for a Dataset::
+
+dataset.csv::
+
+    # header image,d,l,s
+    Image,ROI_Area,Channel_Index,Channel_Name
+    1277,0.0469,1,DAPI
+    1278,0.142,2,GFP
+    1279,0.093,3,TRITC
+
+This will create an OMERO.table with new ``Image Name`` column::
+
+===== ======== ============= ============ ===========
+Image ROI_Area Channel_Index Channel_Name Image Name
+===== ======== ============= ============ ===========
+1277  0.0469   1             DAPI         img-01.png
+1278  0.142    2             GFP          img-02.png
+1279  0.093    3             TRITC        img-03.png
+===== ======== ============= ============ ===========
+
+NB: Invalid Image IDs (not found in the Dataset) will be changed
+to ``-1`` in the table, with blank ``Image Name``.
+
+**Screen / Plate**
 
 To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
 If a ``# header`` is specified, column types must be ``well`` and ``plate``.
