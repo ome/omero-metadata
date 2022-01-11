@@ -851,6 +851,7 @@ class RoiIdsInDataset(RoiIdsInImage):
 
     def __init__(self):
         self.count = 7
+        self.shapes_per_roi = 3
         self.ann_count = 0
         self.dataset = None
         self.rois = None
@@ -874,17 +875,16 @@ class RoiIdsInDataset(RoiIdsInImage):
             # need ROI IDs...
             self.get_target()
             row_data = []
+            row_idx = 0
             for roi in self.rois:
-                shape_id = roi.copyShapes()[0].id.val
-                row_data.append("%s,%s,%s,Cell,0.5,100" % (
-                    roi.id.val, shape_id, roi.image.id.val))
-            # rows with invalid IDs will be Skipped
-            for count, roi in enumerate(self.rois):
-                shape_id = roi.copyShapes()[0].id.val
-                ids = [shape_id, roi.id.val, roi.image.id.val]
-                # set either shape, roi or image ID to be invalid
-                ids[count % 3] = 1
-                row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
+                for shape in roi.copyShapes():
+                    ids = [roi.id.val, shape.id.val, roi.image.id.val]
+                    row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
+                    # rows with invalid IDs will be Skipped
+                    # set either shape, roi or image ID to be invalid
+                    ids[row_idx % 3] = 1
+                    row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
+                    row_idx += 1
             self.csv = self.create_csv(
                 col_names="Roi,shape,Image,Feature,RoiArea,Count",
                 row_data=row_data,
@@ -903,10 +903,11 @@ class RoiIdsInDataset(RoiIdsInImage):
                 roi = RoiI()
                 roi.name = rstring(roi_name)
                 roi.setImage(ImageI(image.id, False))
-                point = PointI()
-                point.x = rdouble(1)
-                point.y = rdouble(2)
-                roi.addShape(point)
+                for count in range(self.shapes_per_roi):
+                    point = PointI()
+                    point.x = rdouble(count * 10)
+                    point.y = rdouble(10)
+                    roi.addShape(point)
                 rois.append(roi)
         us = self.test.client.sf.getUpdateService()
         return us.saveAndReturnArray(rois)
@@ -920,8 +921,10 @@ class RoiIdsInDataset(RoiIdsInImage):
 
     def assert_row_count(self, rows):
         # we created csv row for all ROIs.
-        # Extra rows with invalid IDs are Skipped
-        assert rows == len(self.rois)
+        # Extra rows with invalid Shape/ROI IDs are Skipped
+        # but rows with invalid Image IDs are kept with ID: -1
+        # + 1 invalid Image ID per roi
+        assert rows == len(self.rois) * (self.shapes_per_roi + 1)
 
     def get_annotations(self):
         query = """select d from Dataset d

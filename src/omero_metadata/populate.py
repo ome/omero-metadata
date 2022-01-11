@@ -856,7 +856,7 @@ class DatasetWrapper(PDIWrapper):
                 'join r.image as i '
                 'join i.datasetLinks as dil '
                 'join dil.parent as d '
-                'where d.id = :id order by r.id desc'),
+                'where d.id = :id order by s.id desc'),
                 parameters, {'omero.group': '-1'}))
             if len(rv) == 0:
                 break
