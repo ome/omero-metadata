@@ -766,7 +766,6 @@ class DatasetWrapper(PDIWrapper):
 
     def resolve_roi(self, column, row, value):
         # Support Dataset table with known ROI IDs
-        print("DatasetWrapper resolve_rois", value)
         if self.rois_by_id is None:
             self._load_rois()
         try:
@@ -862,8 +861,7 @@ class DatasetWrapper(PDIWrapper):
             else:
                 data.extend(rv)
         if not data:
-            print("No ROIs on images in target Dataset")
-            # raise MetadataError('Could not find target object!')
+            raise MetadataError("No ROIs on images in target Dataset")
 
         for image, roi, shape in data:
             # we only care about *IDs* of ROIs and Shapes in the Dataset
