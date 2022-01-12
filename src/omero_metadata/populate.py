@@ -961,6 +961,7 @@ class ImageWrapper(ValueWrapper):
     def __init__(self, value_resolver):
         super(ImageWrapper, self).__init__(value_resolver)
         self.rois_by_id = dict()
+        self.shapes_by_id = dict()
         self.rois_by_name = dict()
         self.ambiguous_naming = False
         self._load()
@@ -970,6 +971,16 @@ class ImageWrapper(ValueWrapper):
 
     def get_roi_name_by_id(self, rid):
         return unwrap(self.rois_by_id[rid].name)
+
+    def resolve_shape(self, value):
+        try:
+            return self.shapes_by_id[int(value)].id.val
+        except KeyError:
+            log.warn('Image is missing Shape: %s' % value)
+            return Skip()
+        except ValueError:
+            log.warn('Wrong input type for Shape ID: %s' % value)
+            return Skip()
 
     def resolve_roi(self, column, row, value):
         try:
@@ -997,9 +1008,10 @@ class ImageWrapper(ValueWrapper):
         while True:
             parameters.page(len(data), 1000)
             rv = query_service.findAllByQuery((
-                'select distinct r from Image as i '
-                'join i.rois as r '
-                'where i.id = :id order by r.id desc'),
+                'select distinct s from Shape as s '
+                'join s.roi as r '
+                'join r.image as i '
+                'where i.id = :id order by s.id desc'),
                 parameters, {'omero.group': '-1'})
             if len(rv) == 0:
                 break
@@ -1010,15 +1022,19 @@ class ImageWrapper(ValueWrapper):
 
         rois_by_id = dict()
         rois_by_name = dict()
-        for roi in data:
+        shapes_by_id = dict()
+        for shape in data:
+            roi = shape.roi
             rid = roi.id.val
             rois_by_id[rid] = roi
+            shapes_by_id[shape.id.val] = shape
             if unwrap(roi.name) in rois_by_name.keys():
                 log.warn('Conflicting ROI names.')
                 self.ambiguous_naming = True
             rois_by_name[unwrap(roi.name)] = roi
         self.rois_by_id = rois_by_id
         self.rois_by_name = rois_by_name
+        self.shapes_by_id = shapes_by_id
         log.debug('Completed parsing image: %s' % self.target_name)
 
 

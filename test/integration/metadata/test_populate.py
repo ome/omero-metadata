@@ -756,7 +756,7 @@ class Image2Rois(Fixture):
         )
         self.image = None
         self.rois = None
-        self.names = ("roi1", "roi2")
+        self.roi_names = ("roi1", "roi2")
         self.table_name = None
 
     def assert_columns(self, columns):
@@ -766,7 +766,7 @@ class Image2Rois(Fixture):
 
     def assert_row_count(self, rows):
         # Hard-coded in createCsv's arguments
-        assert rows == len(self.names)
+        assert rows == len(self.roi_names)
 
     def get_target(self):
         if not self.image:
@@ -781,7 +781,7 @@ class Image2Rois(Fixture):
         if not self.image:
             return []
         rois = []
-        for roi_name in self.names:
+        for roi_name in self.roi_names:
             roi = RoiI()
             roi.name = rstring(roi_name)
             roi.setImage(ImageI(self.image.id.val, False))
@@ -814,11 +814,11 @@ class Image2Rois(Fixture):
 class RoiIdsInImage(Image2Rois):
 
     def __init__(self):
-        self.count = 5
+        self.count = 6
         self.ann_count = 0
         self.image = None
         self.rois = None
-        self.names = ("nucleus", "ER", "nucleolus")
+        self.roi_names = ("nucleus", "ER", "nucleolus")
         self.table_name = None
         # csv is created on demand, after ROIs created so we know IDs
         self.csv = None
@@ -827,19 +827,28 @@ class RoiIdsInImage(Image2Rois):
         if self.csv is None:
             # need ROI IDs...
             self.get_target()
-            row_data = ["%s,Cell,0.5,100" % roi.id.val for roi in self.rois]
-            # rows with invalid IDs will be Skipped
-            row_data.append("1,Invalid_ROI_ID,0.5,100")
+            row_data = []
+            row_idx = 0
+            for roi in self.rois:
+                for shape in roi.copyShapes():
+                    ids = [roi.id.val, shape.id.val]
+                    row_data.append("%s,%s,Cell,0.5,100" % tuple(ids))
+                    # rows with invalid IDs will be Skipped
+                    # set either shape or roi ID to be invalid
+                    ids[row_idx % 2] = 1
+                    row_data.append("%s,%s,Cell,0.5,100" % tuple(ids))
+                    row_idx += 1
             self.csv = self.create_csv(
-                col_names="Roi,Feature,RoiArea,Count",
+                # shape columns identified by name not type
+                col_names="Roi,shape,Feature,RoiArea,Count",
                 row_data=row_data,
-                header="# header roi,s,d,l"
+                header="# header roi,l,s,d,l"
             )
         return self.csv
 
     def assert_columns(self, columns):
         # Adds a new 'Roi Name' column
-        col_names = "Roi,Feature,RoiArea,Count,Roi Name"
+        col_names = "Roi,shape,Feature,RoiArea,Count,Roi Name"
         assert col_names == ",".join([c.name for c in columns])
 
     def assert_child_annotations(self, oas):
@@ -1285,6 +1294,8 @@ class TestPopulateMetadataHelperPerMethod(TestPopulateMetadataHelper):
 class TestPopulateMetadata(TestPopulateMetadataHelper):
 
     METADATA_FIXTURES = (
+        RoiIdsInDataset(),
+        RoiIdsInImage(),
         Screen2Plates(),
         Plate2Wells(),
         Dataset2Images(),
