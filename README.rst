@@ -148,7 +148,7 @@ If the target is a Plate instead of a Screen, the ``Plate`` column is not needed
 
 **ROIs**
 
-If the target is an Image or a Dataset, a csv with ROI-level and Shape-level data can be used to create an
+If the target is an Image or a Dataset, a ``CSV`` with ROI-level and Shape-level data can be used to create an
 ``OMERO.table`` (bulk annotation) as a ``File Annotation`` linked to the target object.
 The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
 column will be appended automatically (see example below). If a column named ``shape``
