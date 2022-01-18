@@ -765,7 +765,6 @@ class Image2Rois(Fixture):
         assert col_names == ",".join([c.name for c in columns])
 
     def assert_row_count(self, rows):
-        # Hard-coded in createCsv's arguments
         assert rows == len(self.roi_names)
 
     def get_target(self):
@@ -833,7 +832,7 @@ class RoiIdsInImage(Image2Rois):
                 for shape in roi.copyShapes():
                     ids = [roi.id.val, shape.id.val]
                     row_data.append("%s,%s,Cell,0.5,100" % tuple(ids))
-                    # rows with invalid IDs will be Skipped
+                    # test handling of invalid IDs
                     # set either shape or roi ID to be invalid
                     ids[row_idx % 2] = 1
                     row_data.append("%s,%s,Cell,0.5,100" % tuple(ids))
@@ -853,6 +852,10 @@ class RoiIdsInImage(Image2Rois):
 
     def assert_child_annotations(self, oas):
         assert len(oas) == 0
+
+    def assert_row_count(self, rows):
+        # we have 2 csv rows per ROI (one row is invalid)
+        assert rows == len(self.roi_names) * 2
 
 
 class RoiIdsInDataset(RoiIdsInImage):
@@ -889,7 +892,7 @@ class RoiIdsInDataset(RoiIdsInImage):
                 for shape in roi.copyShapes():
                     ids = [roi.id.val, shape.id.val, roi.image.id.val]
                     row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
-                    # rows with invalid IDs will be Skipped
+                    # test handling of invalid IDs
                     # set either shape, roi or image ID to be invalid
                     ids[row_idx % 3] = 1
                     row_data.append("%s,%s,%s,Cell,0.5,100" % tuple(ids))
@@ -929,11 +932,8 @@ class RoiIdsInDataset(RoiIdsInImage):
         assert col_names == ",".join([c.name for c in columns])
 
     def assert_row_count(self, rows):
-        # we created csv row for all ROIs.
-        # Extra rows with invalid Shape/ROI IDs are Skipped
-        # but rows with invalid Image IDs are kept with ID: -1
-        # + 1 invalid Image ID per roi
-        assert rows == len(self.rois) * (self.shapes_per_roi + 1)
+        # we have 2 csv rows per Shape (one row is invalid)
+        assert rows == len(self.rois) * self.shapes_per_roi * 2
 
     def get_annotations(self):
         query = """select d from Dataset d

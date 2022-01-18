@@ -772,10 +772,10 @@ class DatasetWrapper(PDIWrapper):
             return self.rois_by_id[int(value)].id.val
         except KeyError:
             log.warn('Dataset is missing ROI: %s' % value)
-            return Skip()
+            return -1
         except ValueError:
             log.warn('Wrong input type for ROI ID: %s' % value)
-            return Skip()
+            return -1
 
     def resolve_shape(self, value):
         # Support Dataset table with known Shape IDs
@@ -785,10 +785,10 @@ class DatasetWrapper(PDIWrapper):
             return self.shapes_by_id[int(value)].id.val
         except KeyError:
             log.warn('Dataset is missing Shape: %s' % value)
-            return Skip()
+            return -1
         except ValueError:
             log.warn('Wrong input type for Shape ID: %s' % value)
-            return Skip()
+            return -1
 
     def get_image_id_by_name(self, iname, dname=None):
         return self.images_by_name[iname].id.val
@@ -977,20 +977,20 @@ class ImageWrapper(ValueWrapper):
             return self.shapes_by_id[int(value)].id.val
         except KeyError:
             log.warn('Image is missing Shape: %s' % value)
-            return Skip()
+            return -1
         except ValueError:
             log.warn('Wrong input type for Shape ID: %s' % value)
-            return Skip()
+            return -1
 
     def resolve_roi(self, column, row, value):
         try:
             return self.rois_by_id[int(value)].id.val
         except KeyError:
             log.warn('Image is missing ROI: %s' % value)
-            return Skip()
+            return -1
         except ValueError:
             log.warn('Wrong input type for ROI ID: %s' % value)
-            return Skip()
+            return -1
 
     def _load(self):
         query_service = self.client.getSession().getQueryService()
