@@ -32,6 +32,8 @@ from omero.util.metadata_utils import NSBULKANNOTATIONSRAW
 from omero.grid import LongColumn
 from omero.model.enums import UnitsLength
 
+import pandas as pd
+
 HELP = """Metadata utilities
 
 Provides access to and editing of the metadata which
@@ -241,6 +243,9 @@ class MetadataControl(BaseControl):
 
         populate.add_argument("--allow_nan", action="store_true", help=(
             "Allow empty values to become Nan in Long or Double columns"))
+
+        populate.add_argument("--detect_header", action="store_true", help=(
+            "Automatically detect header row to populate"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
@@ -483,6 +488,44 @@ class MetadataControl(BaseControl):
         if not initialized:
             self.ctx.die(100, "Failed to initialize Table")
 
+    def detect_headers(self, csv_path):
+        '''
+        Function to automatically detect headers from a CSV file. This function
+        loads the table to pandas to detects the column type and match headers
+        '''
+
+        conserved_headers = ['well', 'plate', 'image', 'dataset', 'roi']
+        headers = []
+        table = pd.read_csv(csv_path)
+        col_types = table.dtypes.values.tolist()
+        cols = list(table.columns)
+
+        for index, col_type in enumerate(col_types):
+            col = cols[index]
+            if col.lower() in conserved_headers:
+                headers.append(col.lower())
+            elif col.lower() == 'image name' or col.lower() == 'imagename' or \
+            col.lower() == 'image_name':
+                headers.append('image')
+            elif col.lower() == 'dataset name' or col.lower() == 'datasetname' or \
+            col.lower() == 'dataset_name':
+                headers.append('dataset')
+            elif col.lower() == 'plate name' or col.lower() == 'platename' or \
+            col.lower() == 'plate_name':
+                headers.append('plate')
+            elif col.lower() == 'well name' or col.lower() == 'wellname' or \
+            col.lower() == 'well_name':
+                headers.append('well')
+            elif col_type.name == 'object':
+                headers.append('s')
+            elif col_type.name == 'float64':
+                headers.append('d')
+            elif col_type.name == 'int64':
+                headers.append('l')
+            elif col_type.name == 'bool':
+                headers.append('b')
+        return headers
+
     # WRITE
 
     def populate(self, args):
@@ -521,6 +564,12 @@ class MetadataControl(BaseControl):
                 cfgid = cfgann.getFile().getId()
                 md.linkAnnotation(cfgann)
 
+        header_type = None
+        if args.detect_header:
+            header_type = self.detect_headers(args.file)
+            if args.dry_run:
+                omero_metadata.populate.log.info(f"Header Types:{header_type}")
+        # add condition col_type = blarg, open arg.file, arg.detect_header
         loops = 0
         ms = 0
         wait = args.wait
@@ -533,7 +582,7 @@ class MetadataControl(BaseControl):
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
                             loops=loops, ms=ms, dry_run=args.dry_run,
-                            allow_nan=args.allow_nan)
+                            allow_nan=args.allow_nan, column_types=header_type)
         ctx.parse()
 
     def rois(self, args):
