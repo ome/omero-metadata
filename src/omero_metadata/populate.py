@@ -416,8 +416,6 @@ class ValueResolver(object):
                         )
                         break
                     elif column.name.lower() == "dataset name":
-                        # DatasetColumn unimplemented at the momnet
-                        # We can still access column names though
                         images_by_id = self.wrapper.images_by_id[
                             self.wrapper.datasets_by_name[column_value].id.val
                         ]
@@ -427,8 +425,6 @@ class ValueResolver(object):
                         )
                         break
                     elif column.name.lower() == "dataset":
-                        # DatasetColumn unimplemented at the momnet
-                        # We can still access column names though
                         images_by_id = self.wrapper.images_by_id[
                             self.wrapper.datasets_by_id[
                                 int(column_value)].id.val
@@ -825,7 +821,10 @@ class ProjectWrapper(PDIWrapper):
 
     def resolve_dataset(self, column, row, value):
         try:
-            return self.datasets_by_name[value].id.val
+            if column.name.lower() == 'dataset':
+                return self.datasets_by_id[int(value)].id.val
+            else:
+                return self.datasets_by_name[value].id.val
         except KeyError:
             log.warn('Project is missing dataset: %s' % value)
             return Skip()
@@ -1159,6 +1158,8 @@ class ParsingContext(object):
                     elif column.name.lower() is ROI_NAME_COLUMN:
                         column.values.append(value)
                     elif column.name.lower() == "plate":
+                        column.values.append(value)
+                    elif column.name.lower() == "dataset":
                         column.values.append(value)
                 except TypeError:
                     log.error('Original value "%s" now "%s" of bad type!' % (
