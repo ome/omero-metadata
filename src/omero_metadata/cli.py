@@ -569,7 +569,6 @@ class MetadataControl(BaseControl):
             header_type = self.detect_headers(args.file)
             if args.dry_run:
                 omero_metadata.populate.log.info(f"Header Types:{header_type}")
-        # add condition col_type = blarg, open arg.file, arg.detect_header
         loops = 0
         ms = 0
         wait = args.wait
