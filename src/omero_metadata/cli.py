@@ -505,16 +505,17 @@ class MetadataControl(BaseControl):
             if col.lower() in conserved_headers:
                 headers.append(col.lower())
             elif col.lower() == 'image name' or col.lower() == 'imagename' or \
-            col.lower() == 'image_name':
+                    col.lower() == 'image_name':
                 headers.append('image')
-            elif col.lower() == 'dataset name' or col.lower() == 'datasetname' or \
-            col.lower() == 'dataset_name':
+            elif col.lower() == 'dataset name' or \
+                    col.lower() == 'datasetname' or \
+                    col.lower() == 'dataset_name':
                 headers.append('dataset')
             elif col.lower() == 'plate name' or col.lower() == 'platename' or \
-            col.lower() == 'plate_name':
+                    col.lower() == 'plate_name':
                 headers.append('plate')
             elif col.lower() == 'well name' or col.lower() == 'wellname' or \
-            col.lower() == 'well_name':
+                    col.lower() == 'well_name':
                 headers.append('well')
             elif col_type.name == 'object':
                 headers.append('s')
