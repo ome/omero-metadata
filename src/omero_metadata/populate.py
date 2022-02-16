@@ -831,7 +831,7 @@ class DatasetWrapper(PDIWrapper):
             images_by_id[iid] = image
             if iname in self.images_by_name:
                 raise Exception("Image named %s(id=%d) present. (id=%s)" % (
-                    iname, self.images_by_name[iname], iid
+                    iname, self.images_by_name[iname].id.val, iid
                 ))
             self.images_by_name[iname] = image
         self.images_by_id[self.target_object.id.val] = images_by_id
