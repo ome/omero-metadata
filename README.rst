@@ -150,14 +150,13 @@ If the target is a Plate instead of a Screen, the ``Plate`` column is not needed
 
 If the target is an Image or a Dataset, a ``CSV`` with ROI-level or Shape-level data can be used to create an
 ``OMERO.table`` (bulk annotation) as a ``File Annotation`` linked to the target object.
-The ROI-identifying column can be an ``roi`` type column containing ROI ID and ``Roi Name``
+If there is an ``roi`` column (header type ``roi``) containing ROI IDs, an ``Roi Name``
 column will be appended automatically (see example below). If a column named ``shape``
 of type ``l`` is included, the Shape IDs will be validated (and set to -1 if invalid).
-Also if an ``image`` ID
-column is included, an ``Image Name`` column will be added as in above examples.
+Also if an ``image`` column of Image IDs is included, an ``Image Name`` column will be added.
 NB: Columns of type ``shape`` aren't yet supported on the OMERO.server.
 
-Alternatively, the ROI input column can be
+Alternatively, if the target is an Image, the ROI input column can be
 ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
 In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
