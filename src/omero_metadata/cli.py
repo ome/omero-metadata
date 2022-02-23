@@ -504,12 +504,15 @@ class MetadataControl(BaseControl):
             col = cols[index]
             if col.lower() in conserved_headers:
                 headers.append(col.lower())
-            elif col.lower() == 'image name' or col.lower() == 'imagename' or \
-                    col.lower() == 'image_name':
+            elif col.lower() == 'image id' or col.lower() == 'imageid' or \
+                    col.lower() == 'image_id':
                 headers.append('image')
-            elif col.lower() == 'dataset name' or \
-                    col.lower() == 'datasetname' or \
-                    col.lower() == 'dataset_name':
+            elif col.lower() == 'roi id' or col.lower() == 'roiid' or \
+                    col.lower() == 'roi_id':
+                headers.append('roi')
+            elif col.lower() == 'dataset id' or \
+                    col.lower() == 'datasetid' or \
+                    col.lower() == 'dataset_id':
                 headers.append('dataset')
             elif col.lower() == 'plate name' or col.lower() == 'platename' or \
                     col.lower() == 'plate_name':
