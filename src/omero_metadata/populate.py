@@ -313,6 +313,11 @@ class HeaderResolver(object):
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure RoiColumn is named 'Roi'
                 column.name = "Roi"
+            if column.__class__ is DatasetColumn:
+                append.append(StringColumn(DATASET_NAME_COLUMN, '',
+                              self.DEFAULT_COLUMN_SIZE, list()))
+                # Ensure DatasetColumn is named 'Dataset'
+                column.name = "Dataset"
             # If image/roi name, then add ID column"
             if column.name == IMAGE_NAME_COLUMN:
                 append.append(ImageColumn("Image", '', list()))
