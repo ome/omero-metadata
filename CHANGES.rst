@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.10.0
+------
+
+* Populate metadata supports ROIs and Shapes when target is a Dataset
+
 0.9.0
 -----
 

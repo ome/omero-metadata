@@ -65,8 +65,8 @@ populate
 
 This command creates an ``OMERO.table`` (bulk annotation) from a ``CSV`` file and links 
 the table as a ``File Annotation`` to a parent container such as Screen, Plate, Project
-or Dataset. It also attempts to convert Image or Well names from the ``CSV`` into
-Image or Well IDs in the ``OMERO.table``.
+Dataset or Image. It also attempts to convert Image, Well or ROI names from the ``CSV`` into
+object IDs in the ``OMERO.table``.
 
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
@@ -86,10 +86,10 @@ The ``# header`` row is optional. Default column type is ``String``.
 NB: Column names should not contain spaces if you want to be able to query
 by these columns.
 
-Examples:
+**Project / Dataset**
 
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
-and ``Image Name``::
+and ``Image Name`` or ``Image ID``::
 
     $ omero metadata populate Project:1 --file path/to/project.csv
 
@@ -102,7 +102,8 @@ project.csv::
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
 
-This will create an OMERO.table linked to the Project like this:
+This will create an OMERO.table linked to the Project like this with
+a new ``Image`` column with IDs:
 
 ========== ============ ======== ============= ============ =====
 Image Name Dataset Name ROI_Area Channel_Index Channel_Name Image
@@ -114,6 +115,9 @@ img-04.png dataset01    0.429    4             Cy5          36641
 ========== ============ ======== ============= ============ =====
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
+
+
+**Screen / Plate**
 
 To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
 If a ``# header`` is specified, column types must be ``well`` and ``plate``.
@@ -142,36 +146,45 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
-If the target is an Image, a csv with ROI-level and object-level data can be used to create an
-``OMERO.table`` (bulk annotation) as a ``File Annotation`` on an Image.
-The ROI identifying column can be an ``roi`` type column containing ROI ID, and ``Roi Name``
-column will be appended automatically (see example below). Alternatively, the input column can be
+**ROIs**
+
+If the target is an Image or a Dataset, a ``CSV`` with ROI-level or Shape-level data can be used to create an
+``OMERO.table`` (bulk annotation) as a ``File Annotation`` linked to the target object.
+If there is an ``roi`` column (header type ``roi``) containing ROI IDs, an ``Roi Name``
+column will be appended automatically (see example below). If a column of Shape IDs named ``shape``
+of type ``l`` is included, the Shape IDs will be validated (and set to -1 if invalid).
+Also if an ``image`` column of Image IDs is included, an ``Image Name`` column will be added.
+NB: Columns of type ``shape`` aren't yet supported on the OMERO.server.
+
+Alternatively, if the target is an Image, the ROI input column can be
 ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
 In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 image.csv::
 
-    # header roi,l,d,l
-    Roi,object,probability,area
-    501,1,0.8,250
-    502,1,0.9,500
-    503,1,0.2,25
-    503,2,0.8,400
-    503,3,0.5,200
+    # header roi,l,l,d,l
+    Roi,shape,object,probability,area
+    501,1066,1,0.8,250
+    502,1067,2,0.9,500
+    503,1068,3,0.2,25
+    503,1069,4,0.8,400
+    503,1070,5,0.5,200
 
 This will create an OMERO.table linked to the Image like this:
 
-=== ====== =========== ==== ========
-Roi object probability area Roi Name
-=== ====== =========== ==== ========
-501 1      0.8         250  Sample1
-502 1      0.9         500  Sample2
-503 1      0.2         25   Sample3
-503 2      0.8         400  Sample3
-503 3      0.5         200  Sample3
-=== ====== =========== ==== ========
+=== ===== ====== =========== ==== ========
+Roi shape object probability area Roi Name
+=== ===== ====== =========== ==== ========
+501 1066  1      0.8         250  Sample1
+502 1067  2      0.9         500  Sample2
+503 1068  3      0.2         25   Sample3
+503 1069  4      0.8         400  Sample3
+503 1070  5      0.5         200  Sample3
+=== ===== ====== =========== ==== ========
 
-Note that the ROI-level ``OMERO.table`` is not visible in the OMERO.web UI right-hand panel, but can be visualized by clicking the "eye" on the bulk annotation attachment on the Image.
+Note that the ROI-level data from an ``OMERO.table`` is not visible
+in the OMERO.web UI right-hand panel under the ``Tables`` tab,
+but the table can be visualized by clicking the "eye" on the bulk annotation attachment on the Image.
 
 Developer install
 =================
