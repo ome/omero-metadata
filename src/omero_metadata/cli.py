@@ -244,8 +244,8 @@ class MetadataControl(BaseControl):
         populate.add_argument("--allow_nan", action="store_true", help=(
             "Allow empty values to become Nan in Long or Double columns"))
 
-        populate.add_argument("--detect_header", action="store_true", help=(
-            "Automatically detect header row to populate"))
+        populate.add_argument("--manual_header", action="store_true", help=(
+            "Disable automatic header detection row to populate"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
@@ -569,10 +569,18 @@ class MetadataControl(BaseControl):
                 md.linkAnnotation(cfgann)
 
         header_type = None
-        if args.detect_header:
+        # To use auto detect header by default unless instructed not to
+        # AND
+        # Check if first row contains `# header`
+        first_row = pd.read_csv(args.file, nrows=1, header=None)
+        if not args.manual_header and \
+                not first_row[0].str.contains('# header'):
+            omero_metadata.populate.log.info("Detecting header types")
             header_type = self.detect_headers(args.file)
             if args.dry_run:
                 omero_metadata.populate.log.info(f"Header Types:{header_type}")
+        else:
+            omero_metadata.populate.log.info("Using user defined header types")
         loops = 0
         ms = 0
         wait = args.wait
