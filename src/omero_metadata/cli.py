@@ -245,7 +245,7 @@ class MetadataControl(BaseControl):
             "Allow empty values to become Nan in Long or Double columns"))
 
         populate.add_argument("--manual_header", action="store_true", help=(
-            "Disable automatic header detection row to populate"))
+            "Disable automatic header detection during population"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
@@ -574,7 +574,7 @@ class MetadataControl(BaseControl):
         # Check if first row contains `# header`
         first_row = pd.read_csv(args.file, nrows=1, header=None)
         if not args.manual_header and \
-                not first_row[0].str.contains('# header'):
+                not first_row[0].str.contains('# header').bool():
             omero_metadata.populate.log.info("Detecting header types")
             header_type = self.detect_headers(args.file)
             if args.dry_run:
