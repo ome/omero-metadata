@@ -488,7 +488,8 @@ class MetadataControl(BaseControl):
         if not initialized:
             self.ctx.die(100, "Failed to initialize Table")
 
-    def detect_headers(self, csv_path):
+    @staticmethod
+    def detect_headers(csv_path):
         '''
         Function to automatically detect headers from a CSV file. This function
         loads the table to pandas to detects the column type and match headers
@@ -576,7 +577,7 @@ class MetadataControl(BaseControl):
         if not args.manual_header and \
                 not first_row[0].str.contains('# header').bool():
             omero_metadata.populate.log.info("Detecting header types")
-            header_type = self.detect_headers(args.file)
+            header_type = MetadataControl.detect_headers(args.file)
             if args.dry_run:
                 omero_metadata.populate.log.info(f"Header Types:{header_type}")
         else:
