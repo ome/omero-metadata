@@ -127,7 +127,8 @@ setup(
         'future',
         'omero-py>=5.6.0',
         'PyYAML',
-        'jinja2'
+        'jinja2',
+        'pandas'
     ],
     python_requires='>=3',
     tests_require=[
