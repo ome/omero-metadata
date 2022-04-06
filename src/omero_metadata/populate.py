@@ -1314,7 +1314,7 @@ class ParsingContext(object):
                             column.values = []
                         row_count = 0
                 else:
-                    log.info('Skip empty row %d', r + 1)
+                    log.warning('Skip empty row %d', r + 1)
         if row_count != 0:
             log.debug("DATA TO ADD")
             log.debug(self.columns)
@@ -1347,7 +1347,7 @@ class ParsingContext(object):
             if row:
                 self.populate_row(row)
             else:
-                log.info('Skip empty row %d', r + 1)
+                log.warning('Skip empty row %d', r + 1)
 
     def post_process(self):
         target_class = self.target_object.__class__
