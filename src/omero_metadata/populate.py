@@ -1304,14 +1304,17 @@ class ParsingContext(object):
         for (r, row) in enumerate(reader):
             log.debug('Row %d', r)
             if filter_function(row):
-                self.populate_row(row)
-                row_count = row_count + 1
-                if row_count >= batch_size:
-                    self.post_process()
-                    table.addData(self.columns)
-                    for column in self.columns:
-                        column.values = []
-                    row_count = 0
+                if row:
+                    self.populate_row(row)
+                    row_count = row_count + 1
+                    if row_count >= batch_size:
+                        self.post_process()
+                        table.addData(self.columns)
+                        for column in self.columns:
+                            column.values = []
+                        row_count = 0
+                else:
+                    log.warning('Skip empty row %d', r + 1)
         if row_count != 0:
             log.debug("DATA TO ADD")
             log.debug(self.columns)
@@ -1341,7 +1344,10 @@ class ParsingContext(object):
         nrows = len(rows)
         for (r, row) in enumerate(rows):
             log.debug('Row %d/%d', r + 1, nrows)
-            self.populate_row(row)
+            if row:
+                self.populate_row(row)
+            else:
+                log.warning('Skip empty row %d', r + 1)
 
     def post_process(self):
         target_class = self.target_object.__class__
