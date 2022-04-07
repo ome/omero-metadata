@@ -72,7 +72,7 @@ The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``
 
 
 
-Automatic header
+Automatic Column Types
 ^^^^^^^^^
 
 **The default behaviour of the script is to automatically detect the column types and specific object types from an input ``CSV`` using the list below.**
@@ -86,7 +86,7 @@ Column Types are:
 
 
 
-Manual Header
+Manual Column Types
 ^^^^^^^^^
 
 However, it is possible to override the default behaviour, ignoring the automatic header detection, and manually assign the header to define the column type if a ``CSV`` with with a ``# header`` tag is passed (see examples below).
