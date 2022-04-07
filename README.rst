@@ -70,8 +70,12 @@ object IDs in the ``OMERO.table``.
 
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
-If you wish to ensure that ``number`` columns are created for numerical data, this will
-allow you to make numerical queries on the table.
+
+
+Automatic header
+^^^^^^^^^
+
+**The default behaviour of the script is to automatically detect the column types and specific object types from an input ``CSV`` using the list below.**
 Column Types are:
 
 - ``d``: ``DoubleColumn``, for floating point numbers
@@ -80,8 +84,14 @@ Column Types are:
 - ``b``: ``BoolColumn``, for true/false
 - ``plate``, ``well``, ``image``, ``dataset``, ``roi`` to specify objects
 
-These can be specified in the first row of a ``CSV`` with a ``# header`` tag (see examples below).
-The ``# header`` row is optional. Default column type is ``String``.
+
+
+Manual Header
+^^^^^^^^^
+
+However, it is possible to override the default behaviour, ignoring the automatic header detection, and manually assign the header to define the column type if a ``CSV`` with with a ``# header`` tag is passed (see examples below).
+
+Automatic header detection can also be ignored if using the ``--manual_headers`` flag. If the ``# header`` is not present and this flag is used, column types will default to ``String``
 
 NB: Column names should not contain spaces if you want to be able to query
 by these columns.
