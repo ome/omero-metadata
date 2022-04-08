@@ -74,7 +74,7 @@ OMERO.tables have defined column types to specify the data-type such as `double`
 
 **The default behaviour of the script is to automatically detect these column types from an input ``CSV``**. This behaviour works as folows:
 
-*  Columns named with a supported object-type (e.g. 'image', 'plate'...) or with object_id (e.g. 'image_id', 'dataset_id' ) will generate the corresponding column type in the OMERO.table. e.g (ImageColumn, PlateColumn, DatasetColumn, etc)
+*  Columns named with a supported object-type ('plate', 'well', 'image', 'dataset', or 'roi') or with object_id (e.g. 'image_id', 'dataset_id') will generate the corresponding column type in the OMERO.table. e.g (ImageColumn, PlateColumn, DatasetColumn, etc)
 *  Other column types will be detected based on the column's data using the pandas library (e.g. column of data type double).
 
 
