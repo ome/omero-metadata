@@ -71,10 +71,6 @@ object IDs in the ``OMERO.table``.
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
 
-
-Automatic Column Types
-^^^^^^^^^
-
 **The default behaviour of the script is to automatically detect the column types and specific object types from an input ``CSV`` using the list below.**
 Column Types are:
 
@@ -85,25 +81,25 @@ Column Types are:
 - ``plate``, ``well``, ``image``, ``dataset``, ``roi`` to specify objects
 
 
+However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed (see examples below).
 
-Manual Column Types
-^^^^^^^^^
-
-However, it is possible to override the default behaviour, ignoring the automatic header detection, and manually assign the header to define the column type if a ``CSV`` with with a ``# header`` tag is passed (see examples below).
-
-Automatic header detection can also be ignored if using the ``--manual_headers`` flag. If the ``# header`` is not present and this flag is used, column types will default to ``String``
+Automatic header detection can also be ignored if using the ``--manual_headers`` flag. If the ``# header`` is not present and this flag is used, column types will default to ``String`` (unless the column names correspond to OMERO objects such as ``image`` or ``plate``).
 
 NB: Column names should not contain spaces if you want to be able to query
 by these columns.
 
+Examples
+^^^^^^^^^
+
 **Project / Dataset**
+^^^^^^^^^
 
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
 and ``Image Name`` or ``Image ID``::
 
     $ omero metadata populate Project:1 --file path/to/project.csv
-
-project.csv::
+    
+project.csv (manual column types definition)::
 
     # header s,s,d,l,s
     Image Name,Dataset Name,ROI_Area,Channel_Index,Channel_Name
@@ -112,7 +108,15 @@ project.csv::
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
 
-This will create an OMERO.table linked to the Project like this with
+project.csv (automatic column types detection)::
+
+    Image Name,Dataset Name,ROI_Area,Channel_Index,Channel_Name
+    img-01.png,dataset01,0.0469,1,DAPI
+    img-02.png,dataset01,0.142,2,GFP
+    img-03.png,dataset01,0.093,3,TRITC
+    img-04.png,dataset01,0.429,4,Cy5
+
+Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as folows with
 a new ``Image`` column with IDs:
 
 ========== ============ ======== ============= ============ =====
@@ -128,11 +132,14 @@ If the target is a Dataset instead of a Project, the ``Dataset Name`` column is 
 
 
 **Screen / Plate**
+^^^^^^^^^
 
 To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
-If a ``# header`` is specified, column types must be ``well`` and ``plate``.
+If a ``# header`` is specified, column types must be ``well`` and ``plate``::
 
-screen.csv::
+    $ omero metadata populate Screen:1 --file path/to/screen.csv
+
+screen.csv (manual column types definition)::
 
     # header well,plate,s,d,l,d
     Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
@@ -141,7 +148,15 @@ screen.csv::
     A3,plate01,DMSO,5.5,550,4
     B1,plate01,DrugX,12.3,50,44.43
 
-This will create an OMERO.table linked to the Screen, with the
+screen.csv (automatic column types detection)::
+
+    Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
+    A1,plate01,DMSO,10.1,10,25.4
+    A2,plate01,DMSO,0.1,1000,2.54
+    A3,plate01,DMSO,5.5,550,4
+    B1,plate01,DrugX,12.3,50,44.43
+
+Similarly, this will create an OMERO.table linked to the Screen, with the
 ``Well Name`` and ``Plate Name`` columns added and the ``Well`` and
 ``Plate`` columns used for IDs:
 
@@ -157,6 +172,7 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
 
 **ROIs**
+^^^^^^^^^
 
 If the target is an Image or a Dataset, a ``CSV`` with ROI-level or Shape-level data can be used to create an
 ``OMERO.table`` (bulk annotation) as a ``File Annotation`` linked to the target object.
@@ -168,11 +184,23 @@ NB: Columns of type ``shape`` aren't yet supported on the OMERO.server.
 
 Alternatively, if the target is an Image, the ROI input column can be
 ``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
-In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
+In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set::
 
-image.csv::
+    $ omero metadata populate Image:1 --file path/to/image.csv
+
+image.csv (manual column types definition)::
 
     # header roi,l,l,d,l
+    Roi,shape,object,probability,area
+    501,1066,1,0.8,250
+    502,1067,2,0.9,500
+    503,1068,3,0.2,25
+    503,1069,4,0.8,400
+    503,1070,5,0.5,200
+    
+    
+image.csv (automatic column types detection)::
+
     Roi,shape,object,probability,area
     501,1066,1,0.8,250
     502,1067,2,0.9,500
