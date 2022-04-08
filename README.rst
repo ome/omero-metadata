@@ -70,18 +70,19 @@ object IDs in the ``OMERO.table``.
 
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
+OMERO.tables have defined column types to specify the data-type such as `double` or `long` and special object-types of each column for storing OMERO object IDs such as ``ImageColumn`` or ``WellColumn``
 
-**The default behaviour of the script is to automatically detect the column types and specific object types from an input ``CSV`` using the list below.**
-Column Types are:
+**The default behaviour of the script is to automatically detect these column types from an input ``CSV``**. This behaviour works as folows:
+* Columns named with a supported object-type (e.g. 'image', 'plate'...) or with object_id (e.g. 'image_id', 'dataset_id' ) will generate the corresponding column type in the OMERO.table. e.g (ImageColumn, PlateColumn, DatasetColumn, etc)
+* Other column types will be detected based on the column's data using the pandas library (e.g. column of data type double).
 
+
+However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
 - ``d``: ``DoubleColumn``, for floating point numbers
 - ``l``: ``LongColumn``, for integer numbers
 - ``s``: ``StringColumn``, for text
 - ``b``: ``BoolColumn``, for true/false
 - ``plate``, ``well``, ``image``, ``dataset``, ``roi`` to specify objects
-
-
-However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed (see examples below).
 
 Automatic header detection can also be ignored if using the ``--manual_headers`` flag. If the ``# header`` is not present and this flag is used, column types will default to ``String`` (unless the column names correspond to OMERO objects such as ``image`` or ``plate``).
 
