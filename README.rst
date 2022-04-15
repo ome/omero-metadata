@@ -79,6 +79,7 @@ OMERO.tables have defined column types to specify the data-type such as `double`
 
 
 However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
+
 - ``d``: ``DoubleColumn``, for floating point numbers
 - ``l``: ``LongColumn``, for integer numbers
 - ``s``: ``StringColumn``, for text
