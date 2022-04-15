@@ -18,38 +18,35 @@ import tempfile
 
 def test_detect_headers():
     d = {
-        'project_name': ['a', 'b', 'c'],
-        'dataset_name': ['a', 'b', 'c'],
-        'plate_name': ['a', 'b', 'c'],
-        'well_name': ['a', 'b', 'c'],
-        'image_name': ['a', 'b', 'c'],
-        'roi_name': ['a', 'b', 'c'],
-        'project_id': [1, 2, 3],
-        'dataset_id': [1, 2, 3],
-        'plate_id': [1, 2, 3],
-        'well_id': [1, 2, 3],
-        'image_id': [1, 2, 3],
-        'roi_id': [1, 2, 3],
-        'project': [1, 2, 3],
-        'dataset': [1, 2, 3],
-        'plate': [1, 2, 3],
-        'well': [1, 2, 3],
-        'image': [1, 2, 3],
-        'roi': [1, 2, 3],
         'measurement 1': [11, 22, 33],
         'measurement 2': [0.1, 0.2, 0.3],
         'measurement 3': ['a', 'b', 'c'],
-        'measurement 4': [True, True, False]
+        'measurement 4': [True, True, False],
+        'measurement 5': [11, 0.1, True]
     }
+    prefix_list = ['project', 'dataset', 'plate', 'well', 'image', 'roi', ]
+    # Create a dictionary with every combination of headers
+    # eg plate_name/platename/plate name/plate_id/plateid/plate id
+    for prefix in prefix_list:
+        d[f'{prefix}_name'] = ['a', 'b', 'c']
+        d[f'{prefix} name'] = ['a', 'b', 'c']
+        d[f'{prefix}name'] = ['a', 'b', 'c']
+        d[f'{prefix}_id'] = [1, 2, 3]
+        d[f'{prefix} id'] = [1, 2, 3]
+        d[f'{prefix}id'] = [1, 2, 3]
+        d[f'{prefix}'] = [1, 2, 3]
 
     df = pd.DataFrame(data=d)
     tmp = tempfile.NamedTemporaryFile()
     df.to_csv(tmp.name, index=False)
     header = MetadataControl.detect_headers(tmp.name)
     expected_header = [
-        's', 's', 'plate', 'well', 's', 's',
-        'l', 'dataset', 'l', 'l', 'image', 'roi',
-        'l', 'dataset', 'plate', 'well', 'image', 'roi',
-        'l', 'd', 's', 'b'
-        ]
+        'l', 'd', 's', 'b', 's',
+        's', 's', 's', 'l', 'l', 'l', 'l',
+        's', 's', 's', 'dataset', 'dataset', 'dataset', 'dataset',
+        'plate', 'plate', 'plate', 'l', 'l', 'l', 'plate',
+        'well', 'well', 'well', 'l', 'l', 'l', 'well',
+        's', 's', 's', 'image', 'image', 'image', 'image',
+        's', 's', 's', 'roi', 'roi', 'roi', 'roi'
+    ]
     assert header == expected_header
