@@ -95,7 +95,7 @@ Examples
 ^^^^^^^^^
 
 **Project / Dataset**
-^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
 and ``Image Name`` or ``Image ID``::
@@ -135,7 +135,7 @@ If the target is a Dataset instead of a Project, the ``Dataset Name`` column is 
 
 
 **Screen / Plate**
-^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 To add a table to a Screen, the ``CSV`` file needs to specify ``Plate`` name and ``Well``.
 If a ``# header`` is specified, column types must be ``well`` and ``plate``::
