@@ -72,7 +72,7 @@ The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``
 
 OMERO.tables have defined column types to specify the data-type such as `double` or `long` and special object-types of each column for storing OMERO object IDs such as ``ImageColumn`` or ``WellColumn``
 
-**The default behaviour of the script is to automatically detect these column types from an input ``CSV``**. This behaviour works as folows:
+The default behaviour of the script is to ``automatically detect these column types`` from an input ``CSV``. This behaviour works as folows:
 
 *  Columns named with a supported object-type ('plate', 'well', 'image', 'dataset', or 'roi') or with object_id (e.g. 'image_id', 'dataset_id') will generate the corresponding column type in the OMERO.table. e.g (ImageColumn, PlateColumn, DatasetColumn, etc)
 *  Other column types will be detected based on the column's data using the pandas library (e.g. column of data type double).
