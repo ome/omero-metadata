@@ -97,7 +97,7 @@ Examples
 **Project / Dataset**
 ^^^^^^^^^^^^^^^^^^^^^^
 
-To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name``
+To add a table to a Project, the ``CSV`` file needs to specify ``Dataset Name`` or ``Dataset ID``
 and ``Image Name`` or ``Image ID``::
 
     $ omero metadata populate Project:1 --file path/to/project.csv
@@ -131,8 +131,38 @@ img-03.png dataset01    0.093    3             TRITC        36640
 img-04.png dataset01    0.429    4             Cy5          36641
 ========== ============ ======== ============= ============ =====
 
-If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
+Example using ``Image ID`` and ``Dataset ID``.
 
+project.csv (manual column types definition)::
+
+    # header image,dataset,d,l,s
+    image id,Dataset ID,ROI_Area,Channel_Index,Channel_Name
+    36638,101,0.0469,1,DAPI
+    36639,101,0.142,2,GFP
+    36640,101,0.093,3,TRITC
+    36641,101,0.429,4,Cy5
+    
+project.csv (automatic column types detection)::
+
+    image id,Dataset ID,ROI_Area,Channel_Index,Channel_Name
+    36638,101,0.0469,1,DAPI
+    36639,101,0.142,2,GFP
+    36640,101,0.093,3,TRITC
+    36641,101,0.429,4,Cy5
+    
+Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as folows with
+a new ``Image`` column with Names:
+
+===== ======= ======== ============= ============ ==========
+Image Dataset ROI_Area Channel_Index Channel_Name Image Name
+===== ======= ======== ============= ============ ==========
+36638 101     0.0469   1             DAPI         img-01.png 
+36639 101     0.142    2             GFP          img-02.png 
+36640 101     0.093    3             TRITC        img-03.png 
+36641 101     0.429    4             Cy5          img-04.png
+===== ======= ======== ============= ============ ==========
+
+If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
 
 **Screen / Plate**
 ^^^^^^^^^^^^^^^^^^^
