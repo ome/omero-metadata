@@ -74,8 +74,8 @@ OMERO.tables have defined column types to specify the data-type such as ``double
 
 The default behaviour of the script is to automatically detect the column types from an input ``CSV``. This behaviour works as folows:
 
-*  Columns named with a supported object-type ('plate', 'well', 'image', 'dataset', or 'roi') or with object_id (e.g. 'image_id', 'dataset_id') will generate the corresponding column type in the OMERO.table. e.g (ImageColumn, PlateColumn, DatasetColumn, etc)
-*  Other column types will be detected based on the column's data using the pandas library (e.g. column of data type double).
+*  Columns named with a supported object-type (e.g. 'plate', 'well', 'image', 'dataset', or 'roi'), with <object>_id (e.g. 'image_id', 'dataset_id') or with <object>_name (e.g. 'plate_name', 'dataset_name') will generate the corresponding column type in the OMERO.table (e.g. ImageColumn, PlateColumn, DatasetColumn, etc).
+*  All other column types will be detected based on the column's data using the pandas library (e.g. columns of data type double will be detected as ``DoubleColumn``).
 
 
 However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
@@ -150,7 +150,7 @@ project.csv (automatic column types detection)::
     36640,101,0.093,3,TRITC
     36641,101,0.429,4,Cy5
     
-Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as folows with
+The previous example will create an OMERO.table linked to the Project as folows with
 a new ``Image`` column with Names:
 
 ===== ======= ======== ============= ============ ==========
@@ -189,7 +189,7 @@ screen.csv (automatic column types detection)::
     A3,plate01,DMSO,5.5,550,4
     B1,plate01,DrugX,12.3,50,44.43
 
-Similarly, this will create an OMERO.table linked to the Screen, with the
+This will create an OMERO.table linked to the Screen, with the
 ``Well Name`` and ``Plate Name`` columns added and the ``Well`` and
 ``Plate`` columns used for IDs:
 
