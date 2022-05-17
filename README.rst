@@ -64,7 +64,7 @@ populate
 --------
 
 This command creates an ``OMERO.table`` (bulk annotation) from a ``CSV`` file and links 
-the table as a ``File Annotation`` to a parent container such as Screen, Plate, Project
+the table as a ``File Annotation`` to a parent container such as Screen, Plate, Project,
 Dataset or Image. It also attempts to convert Image, Well or ROI names from the ``CSV`` into
 object IDs in the ``OMERO.table``.
 
@@ -72,13 +72,45 @@ The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``
 
 OMERO.tables have defined column types to specify the data-type such as ``double`` or ``long`` and special object-types of each column for storing OMERO object IDs such as ``ImageColumn`` or ``WellColumn``
 
-The default behaviour of the script is to automatically detect the column types from an input ``CSV``. This behaviour works as folows:
+The default behaviour of the script is to automatically detect the column types from an input ``CSV``. This behaviour works as follows:
 
-*  Columns named with a supported object-type (e.g. 'plate', 'well', 'image', 'dataset', or 'roi'), with <object>_id (e.g. 'image_id', 'dataset_id') or with <object>_name (e.g. 'plate_name', 'dataset_name') will generate the corresponding column type in the OMERO.table (e.g. ImageColumn, PlateColumn, DatasetColumn, etc).
-*  All other column types will be detected based on the column's data using the pandas library (e.g. columns of data type double will be detected as ``DoubleColumn``).
+*  Columns named with a supported object-type (e.g. ``plate``, ``well``, ``image``, ``dataset``, or ``roi``), with ``<object>_id`` or ``<object>_name`` will generate the corresponding column type in the OMERO.table. See table below for full list of supported column names.
+
+============ ================= ==================== ==================================
+Column Name  Column type       Detected Header Type Notes
+============ ================= ==================== ==================================
+Image        ``ImageColumn``   ``image``            Appends 'Image Name' column
+Image Name   ``StringColumn``  ``s``                Appends 'Image' column
+Image ID     ``ImageColumn``   ``image``            Appends 'Image Name' column
+Dataset      ``DatasetColumn`` ``dataset``          \-
+Dataset Name ``StringColumn``  ``s``                \-
+Dataset ID   ``DatasetColumn`` ``dataset``          \-
+Plate        ``PlateColumn``   ``plate``            Adds 'Plate' column
+Plate Name   ``PlateColumn``   ``plate``            Adds 'Plate' column
+Plate ID     ``LongColumn``    ``l``                \-
+Well         ``WellColumn``    ``well``             Adds 'Well' column
+Well Name    ``WellColumn``    ``well``             Adds 'Well' column
+Well ID      ``LongColumn``    ``l``                \-
+ROI          ``RoiColumn``     ``roi``              Appends 'ROI Name' column
+ROI Name     ``StringColumn``  ``s``                \-
+ROI ID       ``RoiColumn``     ``roi``              Appends 'ROI Name' column
+============ ================= ==================== ==================================
+         
+Note: Column names are case insensitive. Space, nospace, and underscore are all accepted as seperaters for column names (i.e. ``<object> name``/``<object> id```, ``<object>name``/``<object>id``, ``<object>_name``/``<object>_id`` are all accepted)
+
+*  All other column types will be detected based on the column's data using the pandas library. See table below.
+
+=============== ================= ====================
+Column Name     Column type       Detected Header Type
+=============== ================= ====================
+Example String  ``StringColumn``  ``s``      
+Example Long    ``LongColumn``    ``l``      
+Example Float   ``DoubleColumn``  ``d``      
+Example boolean ``BoolColumn``    ``b``      
+=============== ================= ====================
 
 
-However, it is possible to manually define the column types , ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
+However, it is possible to manually define the header types, ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
 
 - ``d``: ``DoubleColumn``, for floating point numbers
 - ``l``: ``LongColumn``, for integer numbers
@@ -110,16 +142,10 @@ project.csv (manual column types definition)::
     img-02.png,dataset01,0.142,2,GFP
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
+    
+Note: Remove ``# header`` row for automatic column types detection.
 
-project.csv (automatic column types detection)::
-
-    Image Name,Dataset Name,ROI_Area,Channel_Index,Channel_Name
-    img-01.png,dataset01,0.0469,1,DAPI
-    img-02.png,dataset01,0.142,2,GFP
-    img-03.png,dataset01,0.093,3,TRITC
-    img-04.png,dataset01,0.429,4,Cy5
-
-Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as folows with
+Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as follows with
 a new ``Image`` column with IDs:
 
 ========== ============ ======== ============= ============ =====
@@ -141,16 +167,10 @@ project.csv (manual column types definition)::
     36639,101,0.142,2,GFP
     36640,101,0.093,3,TRITC
     36641,101,0.429,4,Cy5
-    
-project.csv (automatic column types detection)::
 
-    image id,Dataset ID,ROI_Area,Channel_Index,Channel_Name
-    36638,101,0.0469,1,DAPI
-    36639,101,0.142,2,GFP
-    36640,101,0.093,3,TRITC
-    36641,101,0.429,4,Cy5
+Note: Remove ``# header`` row for automatic column types detection.
     
-The previous example will create an OMERO.table linked to the Project as folows with
+The previous example will create an OMERO.table linked to the Project as follows with
 a new ``Image`` column with Names:
 
 ===== ======= ======== ============= ============ ==========
@@ -181,13 +201,7 @@ screen.csv (manual column types definition)::
     A3,plate01,DMSO,5.5,550,4
     B1,plate01,DrugX,12.3,50,44.43
 
-screen.csv (automatic column types detection)::
-
-    Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
-    A1,plate01,DMSO,10.1,10,25.4
-    A2,plate01,DMSO,0.1,1000,2.54
-    A3,plate01,DMSO,5.5,550,4
-    B1,plate01,DrugX,12.3,50,44.43
+Note: Remove ``# header`` row for automatic column types detection.
 
 This will create an OMERO.table linked to the Screen, with the
 ``Well Name`` and ``Plate Name`` columns added and the ``Well`` and
@@ -231,15 +245,7 @@ image.csv (manual column types definition)::
     503,1069,4,0.8,400
     503,1070,5,0.5,200
     
-    
-image.csv (automatic column types detection)::
-
-    Roi,shape,object,probability,area
-    501,1066,1,0.8,250
-    502,1067,2,0.9,500
-    503,1068,3,0.2,25
-    503,1069,4,0.8,400
-    503,1070,5,0.5,200
+Note: Remove ``# header`` row for automatic column types detection.
 
 This will create an OMERO.table linked to the Image like this:
 
