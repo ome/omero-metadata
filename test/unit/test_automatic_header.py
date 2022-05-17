@@ -120,7 +120,6 @@ class TestColumnTypes:
             'plate', 'well', 'measurement 1',
             'measurement 2', 'measurement 3', 'measurement 4']
 
-        # plate_id = 'l' since 'plate' header type is not supported for plateid
         header_type = ['plate', 'well', 'l', 'd', 's', 'b']
 
         expected_resolved_column_names = [
