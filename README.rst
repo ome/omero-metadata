@@ -74,7 +74,7 @@ OMERO.tables have defined column types to specify the data-type such as ``double
 
 The default behaviour of the script is to automatically detect the column types from an input ``CSV``. This behaviour works as follows:
 
-*  Columns named with a supported object-type (e.g. ``plate``, ``well``, ``image``, ``dataset``, or ``roi``), with ``<object>_id`` or ``<object>_name`` will generate the corresponding column type in the OMERO.table. See table below for full list of supported column names.
+*  Columns named with a supported object-type (e.g. ``plate``, ``well``, ``image``, ``dataset``, or ``roi``), with ``<object> id`` or ``<object> name`` will generate the corresponding column type in the OMERO.table. See table below for full list of supported column names.
 
 ============ ================= ==================== ==================================
 Column Name  Column type       Detected Header Type Notes
