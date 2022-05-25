@@ -36,7 +36,7 @@ conflicts when importing the Python module.
 Usage
 =====
 
-The plugin is called from the command-line using the `omero` command::
+The plugin is called from the command-line using the ``omero metadata`` command::
 
     $ omero metadata <subcommand>
 
