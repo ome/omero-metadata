@@ -123,8 +123,11 @@ Automatic header detection can also be ignored if using the ``--manual_headers``
 NB: Column names should not contain spaces if you want to be able to query
 by these columns.
 
+
 Examples
 ^^^^^^^^^
+
+The examples below will use the default automatic column types detection behaviour. It is possible to achieve the same results (or a different desired result) by manually adding a custom ``# header`` row at the top of the CSV.
 
 **Project / Dataset**
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -134,18 +137,18 @@ and ``Image Name`` or ``Image ID``::
 
     $ omero metadata populate Project:1 --file path/to/project.csv
     
-project.csv (manual column types definition)::
+Using ``Image Name`` and ``Dataset Name``:
 
-    # header s,s,d,l,s
+project.csv::
+
     Image Name,Dataset Name,ROI_Area,Channel_Index,Channel_Name
     img-01.png,dataset01,0.0469,1,DAPI
     img-02.png,dataset01,0.142,2,GFP
     img-03.png,dataset01,0.093,3,TRITC
     img-04.png,dataset01,0.429,4,Cy5
     
-Note: Remove ``# header`` row for automatic column types detection.
 
-Both manual definition or automatic detection of column types will create an OMERO.table linked to the Project as follows with
+The previous example will create an OMERO.table linked to the Project as follows with
 a new ``Image`` column with IDs:
 
 ========== ============ ======== ============= ============ =====
@@ -157,19 +160,19 @@ img-03.png dataset01    0.093    3             TRITC        36640
 img-04.png dataset01    0.429    4             Cy5          36641
 ========== ============ ======== ============= ============ =====
 
-Example using ``Image ID`` and ``Dataset ID``.
+Note: equivalent to adding ``# header s,s,d,l,s`` row to the top of the ``project.csv`` for manual definition.
 
-project.csv (manual column types definition)::
+Using ``Image ID`` and ``Dataset ID``:
 
-    # header image,dataset,d,l,s
+project.csv::
+
     image id,Dataset ID,ROI_Area,Channel_Index,Channel_Name
     36638,101,0.0469,1,DAPI
     36639,101,0.142,2,GFP
     36640,101,0.093,3,TRITC
     36641,101,0.429,4,Cy5
 
-Note: Remove ``# header`` row for automatic column types detection.
-    
+
 The previous example will create an OMERO.table linked to the Project as follows with
 a new ``Image`` column with Names:
 
@@ -184,6 +187,8 @@ Image Dataset ROI_Area Channel_Index Channel_Name Image Name
 
 If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
 
+Note: equivalent to adding ``# header image,dataset,d,l,s`` row to the top of the ``project.csv`` for manual definition.
+
 **Screen / Plate**
 ^^^^^^^^^^^^^^^^^^^
 
@@ -192,16 +197,14 @@ If a ``# header`` is specified, column types must be ``well`` and ``plate``::
 
     $ omero metadata populate Screen:1 --file path/to/screen.csv
 
-screen.csv (manual column types definition)::
+screen.csv::
 
-    # header well,plate,s,d,l,d
     Well,Plate,Drug,Concentration,Cell_Count,Percent_Mitotic
     A1,plate01,DMSO,10.1,10,25.4
     A2,plate01,DMSO,0.1,1000,2.54
     A3,plate01,DMSO,5.5,550,4
     B1,plate01,DrugX,12.3,50,44.43
 
-Note: Remove ``# header`` row for automatic column types detection.
 
 This will create an OMERO.table linked to the Screen, with the
 ``Well Name`` and ``Plate Name`` columns added and the ``Well`` and
@@ -217,6 +220,8 @@ Well  Plate  Drug   Concentration  Cell_Count  Percent_Mitotic  Well Name   Plat
 ===== ====== ====== ============== =========== ================ =========== ===========
 
 If the target is a Plate instead of a Screen, the ``Plate`` column is not needed.
+
+Note: equivalent to adding ``# header well,plate,s,d,l,d`` row to the top of the ``screen.csv`` for manual definition.
 
 **ROIs**
 ^^^^^^^^^
@@ -235,9 +240,8 @@ In this case, it is required that ROIs on the Image in OMERO have the ``Name`` a
 
     $ omero metadata populate Image:1 --file path/to/image.csv
 
-image.csv (manual column types definition)::
+image.csv::
 
-    # header roi,l,l,d,l
     Roi,shape,object,probability,area
     501,1066,1,0.8,250
     502,1067,2,0.9,500
@@ -245,7 +249,6 @@ image.csv (manual column types definition)::
     503,1069,4,0.8,400
     503,1070,5,0.5,200
     
-Note: Remove ``# header`` row for automatic column types detection.
 
 This will create an OMERO.table linked to the Image like this:
 
@@ -258,6 +261,8 @@ Roi shape object probability area Roi Name
 503 1069  4      0.8         400  Sample3
 503 1070  5      0.5         200  Sample3
 === ===== ====== =========== ==== ========
+
+Note: equivalent to adding ``# header roi,l,l,d,l`` row to the top of the ``image.csv`` for manual definition.
 
 Note that the ROI-level data from an ``OMERO.table`` is not visible
 in the OMERO.web UI right-hand panel under the ``Tables`` tab,
