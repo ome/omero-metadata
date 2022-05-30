@@ -88,7 +88,7 @@ class TestColumnTypes:
             LongColumn, DoubleColumn, StringColumn, BoolColumn,
             StringColumn, StringColumn]
 
-        target_object = ScreenI(0, None)  # Target object is Screen
+        target_object = ScreenI(0, None)  # Target is agnostic
         self.assert_expected(
             target_object, column_name, header_type,
             expected_resolved_column_type, expected_resolved_column_names)
@@ -109,7 +109,7 @@ class TestColumnTypes:
             LongColumn, LongColumn,
             LongColumn, DoubleColumn, StringColumn, BoolColumn]
 
-        target_object = ScreenI(0, None)  # Target object is Screen
+        target_object = ScreenI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
@@ -131,7 +131,7 @@ class TestColumnTypes:
             LongColumn, DoubleColumn, StringColumn, BoolColumn,
             StringColumn, StringColumn]
 
-        target_object = ScreenI(0, None)  # Target object is Screen
+        target_object = ScreenI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
@@ -156,7 +156,7 @@ class TestColumnTypes:
             StringColumn, StringColumn,
             LongColumn, DoubleColumn, StringColumn, BoolColumn, ImageColumn]
 
-        target_object = ProjectI(0, None)  # Target object is Project
+        target_object = ProjectI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
@@ -177,7 +177,7 @@ class TestColumnTypes:
             DatasetColumn, ImageColumn,
             LongColumn, DoubleColumn, StringColumn, BoolColumn, StringColumn]
 
-        target_object = ProjectI(0, None)  # Target object is Project
+        target_object = ProjectI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
@@ -198,7 +198,7 @@ class TestColumnTypes:
             DatasetColumn, ImageColumn,
             LongColumn, DoubleColumn, StringColumn, BoolColumn, StringColumn]
 
-        target_object = ProjectI(0, None)  # Target object is Project
+        target_object = ProjectI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
@@ -220,7 +220,7 @@ class TestColumnTypes:
             LongColumn, DoubleColumn, StringColumn, BoolColumn,
             StringColumn, StringColumn]
 
-        target_object = ProjectI(0, None)  # Target object is Project
+        target_object = ProjectI(0, None)  # Target is agnostic
 
         self.assert_expected(
             target_object, column_name, header_type,
