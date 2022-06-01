@@ -184,9 +184,9 @@ Image Dataset ROI_Area Channel_Index Channel_Name Image Name
 36641 101     0.429    4             Cy5          img-04.png
 ===== ======= ======== ============= ============ ==========
 
-If the target is a Dataset instead of a Project, the ``Dataset Name`` column is not needed.
-
 Note: equivalent to adding ``# header image,dataset,d,l,s`` row to the top of the ``project.csv`` for manual definition.
+
+For both examples above, alternatively, if the target is a Dataset instead of a Project, the ``Dataset`` or ``Dataset Name`` column is not needed.
 
 **Screen / Plate**
 ^^^^^^^^^^^^^^^^^^^
