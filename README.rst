@@ -96,7 +96,7 @@ ROI Name     ``StringColumn``  ``s``                Appends 'ROI' column
 ROI ID       ``RoiColumn``     ``roi``              Appends 'ROI Name' column
 ============ ================= ==================== ==================================
          
-Note: Column names are case insensitive. Space, nospace, and underscore are all accepted as seperaters for column names (i.e. ``<object> name``/``<object> id```, ``<object>name``/``<object>id``, ``<object>_name``/``<object>_id`` are all accepted)
+Note: Column names are case insensitive. Space, no space, and underscore are all accepted as separators for column names (i.e. ``<object> name``/``<object> id```, ``<object>name``/``<object>id``, ``<object>_name``/``<object>_id`` are all accepted)
 
 NB: Column names should not contain spaces if you want to be able to query by these columns.
 
