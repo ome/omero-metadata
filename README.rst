@@ -98,6 +98,8 @@ ROI ID       ``RoiColumn``     ``roi``              Appends 'ROI Name' column
          
 Note: Column names are case insensitive. Space, nospace, and underscore are all accepted as seperaters for column names (i.e. ``<object> name``/``<object> id```, ``<object>name``/``<object>id``, ``<object>_name``/``<object>_id`` are all accepted)
 
+NB: Column names should not contain spaces if you want to be able to query by these columns.
+
 *  All other column types will be detected based on the column's data using the pandas library. See table below.
 
 =============== ================= ====================
@@ -119,9 +121,6 @@ However, it is possible to manually define the header types, ignoring the automa
 - ``plate``, ``well``, ``image``, ``dataset``, ``roi`` to specify objects
 
 Automatic header detection can also be ignored if using the ``--manual_headers`` flag. If the ``# header`` is not present and this flag is used, column types will default to ``String`` (unless the column names correspond to OMERO objects such as ``image`` or ``plate``).
-
-NB: Column names should not contain spaces if you want to be able to query
-by these columns.
 
 
 Examples
