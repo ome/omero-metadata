@@ -173,7 +173,7 @@ project.csv::
 
 
 The previous example will create an OMERO.table linked to the Project as follows with
-a new ``Image`` column with Names:
+a new ``Image Name`` column with Names:
 
 ===== ======= ======== ============= ============ ==========
 Image Dataset ROI_Area Channel_Index Channel_Name Image Name
@@ -285,4 +285,4 @@ licensed under the terms of the GNU General Public License (GPL) v2 or later.
 Copyright
 ---------
 
-2018-2021, The Open Microscopy Environment
+2018-2022, The Open Microscopy Environment and Glencoe Software, Inc
