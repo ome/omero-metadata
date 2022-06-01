@@ -76,25 +76,25 @@ The default behaviour of the script is to automatically detect the column types 
 
 *  Columns named with a supported object-type (e.g. ``plate``, ``well``, ``image``, ``dataset``, or ``roi``), with ``<object> id`` or ``<object> name`` will generate the corresponding column type in the OMERO.table. See table below for full list of supported column names.
 
-============ ================= ==================== ==================================
+============ ================= ==================== ====================================================================
 Column Name  Column type       Detected Header Type Notes
-============ ================= ==================== ==================================
-Image        ``ImageColumn``   ``image``            Appends 'Image Name' column
-Image Name   ``StringColumn``  ``s``                Appends 'Image' column
-Image ID     ``ImageColumn``   ``image``            Appends 'Image Name' column
-Dataset      ``DatasetColumn`` ``dataset``          \-
-Dataset Name ``StringColumn``  ``s``                \-
-Dataset ID   ``DatasetColumn`` ``dataset``          \-
-Plate        ``PlateColumn``   ``plate``            Adds 'Plate' column
-Plate Name   ``PlateColumn``   ``plate``            Adds 'Plate' column
-Plate ID     ``LongColumn``    ``l``                \-
-Well         ``WellColumn``    ``well``             Adds 'Well' column
-Well Name    ``WellColumn``    ``well``             Adds 'Well' column
-Well ID      ``LongColumn``    ``l``                \-
-ROI          ``RoiColumn``     ``roi``              Appends 'ROI Name' column
-ROI Name     ``StringColumn``  ``s``                Appends 'ROI' column
-ROI ID       ``RoiColumn``     ``roi``              Appends 'ROI Name' column
-============ ================= ==================== ==================================
+============ ================= ==================== ====================================================================
+Image        ``ImageColumn``   ``image``            Accepts image IDs. Appends new 'Image Name' column with image names.
+Image Name   ``StringColumn``  ``s``                Accepts image names. Appends new 'Image' column with image IDs.
+Image ID     ``ImageColumn``   ``image``            Accepts image IDs. Appends new 'Image Name' column with image names.
+Dataset      ``DatasetColumn`` ``dataset``          Accepts dataset IDs.
+Dataset Name ``StringColumn``  ``s``                Accepts dataset names.
+Dataset ID   ``DatasetColumn`` ``dataset``          Accepts dataset IDs.
+Plate        ``PlateColumn``   ``plate``            Accepts plate names. Adds new 'Plate' column with plate IDs.
+Plate Name   ``PlateColumn``   ``plate``            Accepts plate names. Adds new 'Plate' column with plate IDs.
+Plate ID     ``LongColumn``    ``l``                Accepts plate IDs.
+Well         ``WellColumn``    ``well``             Accepts well names. Adds new 'Well' column with well IDs.
+Well Name    ``WellColumn``    ``well``             Accepts well names. Adds new 'Well' column with well IDs.
+Well ID      ``LongColumn``    ``l``                Accepts well IDs.
+ROI          ``RoiColumn``     ``roi``              Accepts ROI IDs. Appends new 'ROI Name' column with ROI names.
+ROI Name     ``StringColumn``  ``s``                Accepts ROI names. Appends new 'ROI' column with ROI IDs.
+ROI ID       ``RoiColumn``     ``roi``              Accepts ROI IDs. Appends new 'ROI Name' column with ROI names.
+============ ================= ==================== ====================================================================
          
 Note: Column names are case insensitive. Space, no space, and underscore are all accepted as separators for column names (i.e. ``<object> name``/``<object> id```, ``<object>name``/``<object>id``, ``<object>_name``/``<object>_id`` are all accepted)
 
