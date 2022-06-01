@@ -92,7 +92,7 @@ Well         ``WellColumn``    ``well``             Adds 'Well' column
 Well Name    ``WellColumn``    ``well``             Adds 'Well' column
 Well ID      ``LongColumn``    ``l``                \-
 ROI          ``RoiColumn``     ``roi``              Appends 'ROI Name' column
-ROI Name     ``StringColumn``  ``s``                \-
+ROI Name     ``StringColumn``  ``s``                Appends 'ROI' column
 ROI ID       ``RoiColumn``     ``roi``              Appends 'ROI Name' column
 ============ ================= ==================== ==================================
          
