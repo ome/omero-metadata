@@ -231,11 +231,7 @@ If there is an ``roi`` column (header type ``roi``) containing ROI IDs, an ``Roi
 column will be appended automatically (see example below). If a column of Shape IDs named ``shape``
 of type ``l`` is included, the Shape IDs will be validated (and set to -1 if invalid).
 Also if an ``image`` column of Image IDs is included, an ``Image Name`` column will be added.
-NB: Columns of type ``shape`` aren't yet supported on the OMERO.server.
-
-Alternatively, if the target is an Image, the ROI input column can be
-``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
-In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set::
+NB: Columns of type ``shape`` aren't yet supported on the OMERO.server::
 
     $ omero metadata populate Image:1 --file path/to/image.csv
 
@@ -262,6 +258,10 @@ Roi shape object probability area Roi Name
 === ===== ====== =========== ==== ========
 
 Note: equivalent to adding ``# header roi,l,l,d,l`` row to the top of the ``image.csv`` for manual definition.
+
+Alternatively, if the target is an Image, the ROI input column can be
+``Roi Name`` (with type ``s``), and an ``roi`` type column will be appended containing ROI IDs.
+In this case, it is required that ROIs on the Image in OMERO have the ``Name`` attribute set.
 
 Note that the ROI-level data from an ``OMERO.table`` is not visible
 in the OMERO.web UI right-hand panel under the ``Tables`` tab,
