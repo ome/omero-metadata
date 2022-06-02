@@ -241,11 +241,13 @@ class MetadataControl(BaseControl):
         populate.add_argument("--localcfg", help=(
             "Local configuration file or a JSON object string"))
 
-        populate.add_argument("--allow_nan", action="store_true", help=(
-            "Allow empty values to become Nan in Long or Double columns"))
+        populate.add_argument(
+           "--allow-nan", "--allow_nan", action="store_true", help=(
+                "Allow empty values to become Nan in Long or Double columns"))
 
-        populate.add_argument("--manual_header", action="store_true", help=(
-            "Disable automatic header detection during population"))
+        populate.add_argument(
+            "--manual-header", "--manual_header", action="store_true", help=(
+                "Disable automatic header detection during population"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
