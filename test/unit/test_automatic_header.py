@@ -19,11 +19,11 @@ from omero.grid import ImageColumn, LongColumn, PlateColumn, RoiColumn, \
 
 class TestDetectHeaders:
     """Test the MetadataControl.detect_headers API"""
-    def assert_detect_headers(self):
+    def assert_detect_headers(self, **kwargs):
         df = pd.DataFrame(data=self.d)
         tmp = tempfile.NamedTemporaryFile()
         df.to_csv(tmp.name, index=False)
-        header = MetadataControl.detect_headers(tmp.name)
+        header = MetadataControl.detect_headers(tmp.name, **kwargs)
         assert header == self.expected_header
 
     def create_objects_dictionary(self):
@@ -52,7 +52,7 @@ class TestDetectHeaders:
         self.create_objects_dictionary()
         self.assert_detect_headers()
 
-    def test_dense_extra_columns(self):
+    def test_dense_columns(self):
         '''
         Test of the default automatic column type detection behaviour
         '''
@@ -66,6 +66,34 @@ class TestDetectHeaders:
         })
         self.expected_header.extend(['l', 'd', 's', 'b', 's'])
         self.assert_detect_headers()
+
+    def test_sparse_default_na(self):
+        '''
+        Test default handling of missing values
+        '''
+        self.create_objects_dictionary()
+        self.d.update({
+            'measurement 1': [11, None, 33],
+            'measurement 2': [0.1, 0.2, None],
+            'measurement 3': ['a', 'b', None],
+            'measurement 4': [True, None, False],
+        })
+        self.expected_header.extend(['d', 'd', 's', 's'])
+        self.assert_detect_headers(keep_default_na=True)
+
+    def test_sparse_no_default_na(self):
+        '''
+        Test handling of missing values as string columns
+        '''
+        self.create_objects_dictionary()
+        self.d.update({
+            'measurement 1': [11, None, 33],
+            'measurement 2': [0.1, 0.2, None],
+            'measurement 3': ['a', 'b', None],
+            'measurement 4': [True, None, False],
+        })
+        self.expected_header.extend(['s', 's', 's', 's'])
+        self.assert_detect_headers(keep_default_na=False)
 
 
 class TestColumnTypes:
