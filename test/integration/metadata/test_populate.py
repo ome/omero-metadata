@@ -175,6 +175,13 @@ class Fixture(object):
         col_names = "Well,Well Type,Concentration,Well Name"
         assert col_names == ",".join([c.name for c in columns])
 
+    def assert_values(self, row_values):
+        # Unsure where the lower-casing is happening
+        if "A1" in row_values or "a1" in row_values:
+            assert "Control" in row_values
+        elif "A2" in row_values or "a2" in row_values:
+            assert "Treatment" in row_values
+
     def assert_child_annotations(self, oas):
         for ma, wid, wr, wc in oas:
             assert isinstance(ma, MapAnnotationI)
@@ -767,6 +774,14 @@ class Image2Rois(Fixture):
     def assert_row_count(self, rows):
         assert rows == len(self.roi_names)
 
+    def assert_values(self, row_values):
+        if "roi1" in row_values:
+            assert 0.5 in row_values
+            assert 100 in row_values
+        elif "roi2" in row_values:
+            assert 'nan' in [str(value) for value in row_values]
+            assert 200 in row_values
+
     def get_target(self):
         if not self.image:
             image = self.test.make_image()
@@ -1218,17 +1233,7 @@ class TestPopulateMetadataHelper(ITest):
             row_values = [col.values[0] for col in t.read(
                 list(range(len(cols))), hit, hit+1).columns]
             assert len(row_values) == fixture.count
-            # Unsure where the lower-casing is happening
-            if "A1" in row_values or "a1" in row_values:
-                assert "Control" in row_values
-            elif "A2" in row_values or "a2" in row_values:
-                assert "Treatment" in row_values
-            elif "roi1" in row_values:
-                assert 0.5 in row_values
-                assert 100 in row_values
-            elif "roi2" in row_values:
-                assert 'nan' in [str(value) for value in row_values]
-                assert 200 in row_values
+            fixture.assert_values(row_values)
 
     def _test_bulk_to_map_annotation_context(self, fixture, batch_size):
         # self._testPopulateMetadataPlate()
