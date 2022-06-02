@@ -17,43 +17,55 @@ from omero.grid import ImageColumn, LongColumn, PlateColumn, RoiColumn, \
     StringColumn, WellColumn, DoubleColumn, BoolColumn, DatasetColumn
 
 
-def test_detect_headers():
-    '''
-    Test of the default automatic column type detection behaviour
-    '''
-    d = {
-        'measurement 1': [11, 22, 33],
-        'measurement 2': [0.1, 0.2, 0.3],
-        'measurement 3': ['a', 'b', 'c'],
-        'measurement 4': [True, True, False],
-        'measurement 5': [11, 0.1, True]
-    }
-    prefix_list = ['project', 'dataset', 'plate', 'well', 'image', 'roi', ]
-    # Create a dictionary with every combination of headers
-    # eg plate_name/platename/plate name/plate_id/plateid/plate id
-    for prefix in prefix_list:
-        d[f'{prefix}_name'] = ['a', 'b', 'c']
-        d[f'{prefix} name'] = ['a', 'b', 'c']
-        d[f'{prefix}name'] = ['a', 'b', 'c']
-        d[f'{prefix}_id'] = [1, 2, 3]
-        d[f'{prefix} id'] = [1, 2, 3]
-        d[f'{prefix}id'] = [1, 2, 3]
-        d[f'{prefix}'] = [1, 2, 3]
+class TestDetectHeaders:
+    """Test the MetadataControl.detect_headers API"""
+    def assert_detect_headers(self):
+        df = pd.DataFrame(data=self.d)
+        tmp = tempfile.NamedTemporaryFile()
+        df.to_csv(tmp.name, index=False)
+        header = MetadataControl.detect_headers(tmp.name)
+        assert header == self.expected_header
 
-    df = pd.DataFrame(data=d)
-    tmp = tempfile.NamedTemporaryFile()
-    df.to_csv(tmp.name, index=False)
-    header = MetadataControl.detect_headers(tmp.name)
-    expected_header = [
-        'l', 'd', 's', 'b', 's',
-        's', 's', 's', 'l', 'l', 'l', 'l',
-        's', 's', 's', 'dataset', 'dataset', 'dataset', 'dataset',
-        'plate', 'plate', 'plate', 'l', 'l', 'l', 'plate',
-        'well', 'well', 'well', 'l', 'l', 'l', 'well',
-        's', 's', 's', 'image', 'image', 'image', 'image',
-        's', 's', 's', 'roi', 'roi', 'roi', 'roi'
-    ]
-    assert header == expected_header
+    def create_objects_dictionary(self):
+        # Create a dictionary with every combination of headers
+        # eg plate_name/platename/plate name/plate_id/plateid/plate id
+        self.d = {}
+        prefix_list = ['project', 'dataset', 'plate', 'well', 'image', 'roi', ]
+        for prefix in prefix_list:
+            self.d[f'{prefix}_name'] = ['a', 'b', 'c']
+            self.d[f'{prefix} name'] = ['a', 'b', 'c']
+            self.d[f'{prefix}name'] = ['a', 'b', 'c']
+            self.d[f'{prefix}_id'] = [1, 2, 3]
+            self.d[f'{prefix} id'] = [1, 2, 3]
+            self.d[f'{prefix}id'] = [1, 2, 3]
+            self.d[f'{prefix}'] = [1, 2, 3]
+        self.expected_header = [
+            's', 's', 's', 'l', 'l', 'l', 'l',
+            's', 's', 's', 'dataset', 'dataset', 'dataset', 'dataset',
+            'plate', 'plate', 'plate', 'l', 'l', 'l', 'plate',
+            'well', 'well', 'well', 'l', 'l', 'l', 'well',
+            's', 's', 's', 'image', 'image', 'image', 'image',
+            's', 's', 's', 'roi', 'roi', 'roi', 'roi'
+        ]
+
+    def test_objects_columns(self):
+        self.create_objects_dictionary()
+        self.assert_detect_headers()
+
+    def test_dense_extra_columns(self):
+        '''
+        Test of the default automatic column type detection behaviour
+        '''
+        self.create_objects_dictionary()
+        self.d.update({
+            'measurement 1': [11, 22, 33],
+            'measurement 2': [0.1, 0.2, 0.3],
+            'measurement 3': ['a', 'b', 'c'],
+            'measurement 4': [True, True, False],
+            'measurement 5': [11, 0.1, True]
+        })
+        self.expected_header.extend(['l', 'd', 's', 'b', 's'])
+        self.assert_detect_headers()
 
 
 class TestColumnTypes:
