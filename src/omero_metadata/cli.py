@@ -489,7 +489,7 @@ class MetadataControl(BaseControl):
             self.ctx.die(100, "Failed to initialize Table")
 
     @staticmethod
-    def detect_headers(csv_path):
+    def detect_headers(csv_path, keep_default_na=True):
         '''
         Function to automatically detect headers from a CSV file. This function
         loads the table to pandas to detects the column type and match headers
@@ -497,7 +497,7 @@ class MetadataControl(BaseControl):
 
         conserved_headers = ['well', 'plate', 'image', 'dataset', 'roi']
         headers = []
-        table = pd.read_csv(csv_path)
+        table = pd.read_csv(csv_path, keep_default_na=keep_default_na)
         col_types = table.dtypes.values.tolist()
         cols = list(table.columns)
 
