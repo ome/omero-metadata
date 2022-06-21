@@ -70,7 +70,7 @@ object IDs in the ``OMERO.table``.
 
 The ``CSV`` file must be provided as local file with ``--file path/to/file.csv``.
 
-OMERO.tables have defined column types to specify the data-type such as ``double`` or ``long`` and special object-types of each column for storing OMERO object IDs such as ``ImageColumn`` or ``WellColumn``
+OMERO.tables have defined column types to specify the data-type such as ``double`` or ``long`` and special object-types of each column for storing OMERO object IDs such as ``ImageColumn`` or ``WellColumn``.
 
 The default behaviour of the script is to automatically detect the column types from an input ``CSV``. This behaviour works as follows:
 
