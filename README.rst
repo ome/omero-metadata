@@ -111,6 +111,9 @@ Example Float   ``DoubleColumn``  ``d``
 Example boolean ``BoolColumn``    ``b``      
 =============== ================= ====================
 
+In the case of missing values, the column will be detected as ``StringColumn`` by default. If ``--allow-nan`` is passed to the
+``omero metadata populate`` commands, missing values in floating-point columns will be detected as ``DoubleColumn`` and the
+missing values will be stored as NaN.
 
 However, it is possible to manually define the header types, ignoring the automatic header detection, if a ``CSV`` with a ``# header`` row is passed. The ``# header`` row should be the first row of the CSV and defines columns according to the following list (see examples below):
 

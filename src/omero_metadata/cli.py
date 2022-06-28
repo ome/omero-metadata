@@ -241,11 +241,13 @@ class MetadataControl(BaseControl):
         populate.add_argument("--localcfg", help=(
             "Local configuration file or a JSON object string"))
 
-        populate.add_argument("--allow_nan", action="store_true", help=(
-            "Allow empty values to become Nan in Long or Double columns"))
+        populate.add_argument(
+           "--allow-nan", "--allow_nan", action="store_true", help=(
+                "Allow empty values to become Nan in Long or Double columns"))
 
-        populate.add_argument("--manual_header", action="store_true", help=(
-            "Disable automatic header detection during population"))
+        populate.add_argument(
+            "--manual-header", "--manual_header", action="store_true", help=(
+                "Disable automatic header detection during population"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
@@ -489,7 +491,7 @@ class MetadataControl(BaseControl):
             self.ctx.die(100, "Failed to initialize Table")
 
     @staticmethod
-    def detect_headers(csv_path):
+    def detect_headers(csv_path, keep_default_na=True):
         '''
         Function to automatically detect headers from a CSV file. This function
         loads the table to pandas to detects the column type and match headers
@@ -497,7 +499,7 @@ class MetadataControl(BaseControl):
 
         conserved_headers = ['well', 'plate', 'image', 'dataset', 'roi']
         headers = []
-        table = pd.read_csv(csv_path)
+        table = pd.read_csv(csv_path, keep_default_na=keep_default_na)
         col_types = table.dtypes.values.tolist()
         cols = list(table.columns)
 
@@ -577,7 +579,8 @@ class MetadataControl(BaseControl):
         if not args.manual_header and \
                 not first_row[0].str.contains('# header').bool():
             omero_metadata.populate.log.info("Detecting header types")
-            header_type = MetadataControl.detect_headers(args.file)
+            header_type = MetadataControl.detect_headers(
+                args.file, keep_default_na=args.allow_nan)
             if args.dry_run:
                 omero_metadata.populate.log.info(f"Header Types:{header_type}")
         else:
