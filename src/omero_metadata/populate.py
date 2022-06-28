@@ -1401,7 +1401,7 @@ class ParsingContext(object):
         if well_name_column is None and plate_name_column is None \
                 and image_name_column is None and roi_name_column is None \
                 and roi_column is None:
-            log.info('Nothing to do during post processing.')
+            log.debug('Nothing to do during post processing.')
             return
 
         sz = max([len(x.values) for x in self.columns])
