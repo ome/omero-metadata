@@ -1,3 +1,8 @@
+0.11.1
+------
+
+* Reduce logging level of post_process statement ([#78](https://github.com/ome/omero-metadata/pull/78))
+
 0.11.0
 ------
 
