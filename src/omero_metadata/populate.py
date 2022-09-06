@@ -1131,7 +1131,7 @@ class ParsingContext(object):
         return widths
 
     def preprocess_from_handle(self, data):
-        reader = csv.reader(data, delimiter=',')
+        reader = csv.reader(data, delimiter=',', skipinitialspace=True)
         first_row = next(reader)
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
@@ -1158,7 +1158,7 @@ class ParsingContext(object):
         self.preprocess_data(reader)
 
     def parse_from_handle_stream(self, data):
-        reader = csv.reader(data, delimiter=',')
+        reader = csv.reader(data, delimiter=',', skipinitialspace=True)
         first_row = next(reader)
         header_row = first_row
         first_row_is_types = HeaderResolver.is_row_column_types(first_row)
