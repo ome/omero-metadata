@@ -32,6 +32,8 @@ from omero.util.metadata_utils import NSBULKANNOTATIONSRAW
 from omero.grid import LongColumn
 from omero.model.enums import UnitsLength
 
+import pandas as pd
+
 HELP = """Metadata utilities
 
 Provides access to and editing of the metadata which
@@ -239,8 +241,13 @@ class MetadataControl(BaseControl):
         populate.add_argument("--localcfg", help=(
             "Local configuration file or a JSON object string"))
 
-        populate.add_argument("--allow_nan", action="store_true", help=(
-            "Allow empty values to become Nan in Long or Double columns"))
+        populate.add_argument(
+           "--allow-nan", "--allow_nan", action="store_true", help=(
+                "Allow empty values to become Nan in Long or Double columns"))
+
+        populate.add_argument(
+            "--manual-header", "--manual_header", action="store_true", help=(
+                "Disable automatic header detection during population"))
 
         populateroi.add_argument(
             "--measurement", type=int, default=None,
@@ -483,6 +490,49 @@ class MetadataControl(BaseControl):
         if not initialized:
             self.ctx.die(100, "Failed to initialize Table")
 
+    @staticmethod
+    def detect_headers(csv_path, keep_default_na=True):
+        '''
+        Function to automatically detect headers from a CSV file. This function
+        loads the table to pandas to detects the column type and match headers
+        '''
+
+        conserved_headers = ['well', 'plate', 'image', 'dataset', 'roi']
+        headers = []
+        table = pd.read_csv(csv_path, keep_default_na=keep_default_na)
+        col_types = table.dtypes.values.tolist()
+        cols = list(table.columns)
+
+        for index, col_type in enumerate(col_types):
+            col = cols[index]
+            if col.lower() in conserved_headers:
+                headers.append(col.lower())
+            elif col.lower() == 'image id' or col.lower() == 'imageid' or \
+                    col.lower() == 'image_id':
+                headers.append('image')
+            elif col.lower() == 'roi id' or col.lower() == 'roiid' or \
+                    col.lower() == 'roi_id':
+                headers.append('roi')
+            elif col.lower() == 'dataset id' or \
+                    col.lower() == 'datasetid' or \
+                    col.lower() == 'dataset_id':
+                headers.append('dataset')
+            elif col.lower() == 'plate name' or col.lower() == 'platename' or \
+                    col.lower() == 'plate_name':
+                headers.append('plate')
+            elif col.lower() == 'well name' or col.lower() == 'wellname' or \
+                    col.lower() == 'well_name':
+                headers.append('well')
+            elif col_type.name == 'object':
+                headers.append('s')
+            elif col_type.name == 'float64':
+                headers.append('d')
+            elif col_type.name == 'int64':
+                headers.append('l')
+            elif col_type.name == 'bool':
+                headers.append('b')
+        return headers
+
     # WRITE
 
     def populate(self, args):
@@ -521,6 +571,20 @@ class MetadataControl(BaseControl):
                 cfgid = cfgann.getFile().getId()
                 md.linkAnnotation(cfgann)
 
+        header_type = None
+        # To use auto detect header by default unless instructed not to
+        # AND
+        # Check if first row contains `# header`
+        first_row = pd.read_csv(args.file, nrows=1, header=None)
+        if not args.manual_header and \
+                not first_row[0].str.contains('# header').bool():
+            omero_metadata.populate.log.info("Detecting header types")
+            header_type = MetadataControl.detect_headers(
+                args.file, keep_default_na=args.allow_nan)
+            if args.dry_run:
+                omero_metadata.populate.log.info(f"Header Types:{header_type}")
+        else:
+            omero_metadata.populate.log.info("Using user defined header types")
         loops = 0
         ms = 0
         wait = args.wait
@@ -533,7 +597,7 @@ class MetadataControl(BaseControl):
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
                             loops=loops, ms=ms, dry_run=args.dry_run,
-                            allow_nan=args.allow_nan)
+                            allow_nan=args.allow_nan, column_types=header_type)
         ctx.parse()
 
     def rois(self, args):

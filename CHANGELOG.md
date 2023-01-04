@@ -1,5 +1,13 @@
-CHANGES
-=======
+0.11.1
+------
+
+* Reduce logging level of post_process statement ([#78](https://github.com/ome/omero-metadata/pull/78))
+
+0.11.0
+------
+
+* Add support for column type auto-detection using pandas ([#67](https://github.com/ome/omero-metadata/pull/67), [#71](https://github.com/ome/omero-metadata/pull/67), [#72](https://github.com/ome/omero-metadata/pull/72), [#75](https://github.com/ome/omero-metadata/pull/75), [#77](https://github.com/ome/omero-metadata/pull/77))
+* Skip empty rows when reading CSV files ([#70](https://github.com/ome/omero-metadata/pull/70))
 
 0.10.0
 ------

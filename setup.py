@@ -92,7 +92,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-version = '0.10.1.dev0'
+version = '0.11.2.dev0'
 url = "https://github.com/ome/omero-metadata/"
 
 setup(
@@ -127,7 +127,8 @@ setup(
         'future',
         'omero-py>=5.6.0',
         'PyYAML',
-        'jinja2'
+        'jinja2',
+        'pandas'
     ],
     python_requires='>=3',
     tests_require=[

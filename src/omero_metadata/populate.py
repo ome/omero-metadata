@@ -309,6 +309,13 @@ class HeaderResolver(object):
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure RoiColumn is named 'Roi'
                 column.name = "Roi"
+            if column.__class__ is DatasetColumn:
+                # This breaks the code, as currently there is no implementation
+                # of a method to populate the 'Dataset Name' column
+                # append.append(StringColumn(DATASET_NAME_COLUMN, '',
+                #               self.DEFAULT_COLUMN_SIZE, list()))
+                # Ensure DatasetColumn is named 'Dataset'
+                column.name = "Dataset"
             # If image/roi name, then add ID column"
             if column.name == IMAGE_NAME_COLUMN:
                 append.append(ImageColumn("Image", '', list()))
@@ -412,8 +419,6 @@ class ValueResolver(object):
                         )
                         break
                     elif column.name.lower() == "dataset name":
-                        # DatasetColumn unimplemented at the momnet
-                        # We can still access column names though
                         images_by_id = self.wrapper.images_by_id[
                             self.wrapper.datasets_by_name[column_value].id.val
                         ]
@@ -423,8 +428,6 @@ class ValueResolver(object):
                         )
                         break
                     elif column.name.lower() == "dataset":
-                        # DatasetColumn unimplemented at the momnet
-                        # We can still access column names though
                         images_by_id = self.wrapper.images_by_id[
                             self.wrapper.datasets_by_id[
                                 int(column_value)].id.val
@@ -904,7 +907,10 @@ class ProjectWrapper(PDIWrapper):
 
     def resolve_dataset(self, column, row, value):
         try:
-            return self.datasets_by_name[value].id.val
+            if column.name.lower() == 'dataset':
+                return self.datasets_by_id[int(value)].id.val
+            else:
+                return self.datasets_by_name[value].id.val
         except KeyError:
             log.warn('Project is missing dataset: %s' % value)
             return Skip()
@@ -1250,6 +1256,8 @@ class ParsingContext(object):
                         column.values.append(value)
                     elif column.name.lower() == "plate":
                         column.values.append(value)
+                    elif column.name.lower() == "dataset":
+                        column.values.append(value)
                 except TypeError:
                     log.error('Original value "%s" now "%s" of bad type!' % (
                         original_value, value))
@@ -1303,14 +1311,17 @@ class ParsingContext(object):
         for (r, row) in enumerate(reader):
             log.debug('Row %d', r)
             if filter_function(row):
-                self.populate_row(row)
-                row_count = row_count + 1
-                if row_count >= batch_size:
-                    self.post_process()
-                    table.addData(self.columns)
-                    for column in self.columns:
-                        column.values = []
-                    row_count = 0
+                if row:
+                    self.populate_row(row)
+                    row_count = row_count + 1
+                    if row_count >= batch_size:
+                        self.post_process()
+                        table.addData(self.columns)
+                        for column in self.columns:
+                            column.values = []
+                        row_count = 0
+                else:
+                    log.warning('Skip empty row %d', r + 1)
         if row_count != 0:
             log.debug("DATA TO ADD")
             log.debug(self.columns)
@@ -1340,7 +1351,10 @@ class ParsingContext(object):
         nrows = len(rows)
         for (r, row) in enumerate(rows):
             log.debug('Row %d/%d', r + 1, nrows)
-            self.populate_row(row)
+            if row:
+                self.populate_row(row)
+            else:
+                log.warning('Skip empty row %d', r + 1)
 
     def post_process(self):
         target_class = self.target_object.__class__
@@ -1394,7 +1408,7 @@ class ParsingContext(object):
         if well_name_column is None and plate_name_column is None \
                 and image_name_column is None and roi_name_column is None \
                 and roi_column is None:
-            log.info('Nothing to do during post processing.')
+            log.debug('Nothing to do during post processing.')
             return
 
         sz = max([len(x.values) for x in self.columns])
@@ -1666,7 +1680,7 @@ class BulkToMapAnnotationContext(_QueryContext):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=10, dry_run=False,
-                 allow_nan=False):
+                 allow_nan=False, **kwargs):
         """
         :param client: OMERO client object
         :param target_object: The object to be annotated
@@ -1999,7 +2013,7 @@ class DeleteMapAnnotationContext(_QueryContext):
     def __init__(self, client, target_object, file=None, fileid=None,
                  cfg=None, cfgid=None, attach=False, options=None,
                  batch_size=1000, loops=10, ms=500, dry_run=False,
-                 allow_nan=False):
+                 allow_nan=False, **kwargs):
 
         """
         :param client: OMERO client object

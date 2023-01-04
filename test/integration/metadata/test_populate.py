@@ -190,7 +190,7 @@ class Fixture(object):
         col_names = "Well,Well Type,Concentration,Well Name"
         assert col_names == ",".join([c.name for c in columns])
 
-    def assert_table_row(self, row_values, row_index):
+    def assert_values(self, row_values):
         # Check rows, based on self.create_csv()
         # Unsure where the lower-casing is happening
         if "A1" in row_values or "a1" in row_values:
@@ -254,8 +254,8 @@ class Screen2Plates(Fixture):
                      "Concentration,Plate Name,Well Name,Image")
         assert col_names == ",".join([c.name for c in columns])
 
-    def assert_table_row(self, row_values, row_index):
-        super(Screen2Plates, self).assert_table_row(row_values, row_index)
+    def assert_values(self, row_values):
+        super(Screen2Plates, self).assert_values(row_values)
         # last column should contain valid Image ID
         image_id = row_values[-1]
         image_name = row_values[2]
@@ -807,6 +807,14 @@ class Image2Rois(Fixture):
     def assert_row_count(self, rows):
         assert rows == len(self.roi_names)
 
+    def assert_values(self, row_values):
+        if "roi1" in row_values:
+            assert 0.5 in row_values
+            assert 100 in row_values
+        elif "roi2" in row_values:
+            assert 'nan' in [str(value) for value in row_values]
+            assert 200 in row_values
+
     def get_target(self):
         if not self.image:
             image = self.test.make_image()
@@ -1258,7 +1266,7 @@ class TestPopulateMetadataHelper(ITest):
             row_values = [col.values[0] for col in t.read(
                 list(range(len(cols))), hit, hit+1).columns]
             assert len(row_values) == fixture.count
-            fixture.assert_table_row(row_values, hit)
+            fixture.assert_values(row_values)
 
     def _test_bulk_to_map_annotation_context(self, fixture, batch_size):
         # self._testPopulateMetadataPlate()
