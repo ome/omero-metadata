@@ -572,19 +572,20 @@ class MetadataControl(BaseControl):
                 md.linkAnnotation(cfgann)
 
         header_type = None
-        # To use auto detect header by default unless instructed not to
-        # AND
-        # Check if first row contains `# header`
-        first_row = pd.read_csv(args.file, nrows=1, header=None)
-        if not args.manual_header and \
-                not first_row[0].str.contains('# header').bool():
-            omero_metadata.populate.log.info("Detecting header types")
-            header_type = MetadataControl.detect_headers(
-                args.file, keep_default_na=args.allow_nan)
-            if args.dry_run:
-                omero_metadata.populate.log.info(f"Header Types:{header_type}")
-        else:
-            omero_metadata.populate.log.info("Using user defined header types")
+        if args.file:
+            # To use auto detect header by default unless instructed not to
+            # AND
+            # Check if first row contains `# header`
+            first_row = pd.read_csv(args.file, nrows=1, header=None)
+            if not args.manual_header and \
+                    not first_row[0].str.contains('# header').bool():
+                omero_metadata.populate.log.info("Detecting header types")
+                header_type = MetadataControl.detect_headers(
+                    args.file, keep_default_na=args.allow_nan)
+                if args.dry_run:
+                    omero_metadata.populate.log.info(f"Header Types:{header_type}")
+            else:
+                omero_metadata.populate.log.info("Using user defined header types")
         loops = 0
         ms = 0
         wait = args.wait
