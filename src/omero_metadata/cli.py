@@ -583,9 +583,11 @@ class MetadataControl(BaseControl):
                 header_type = MetadataControl.detect_headers(
                     args.file, keep_default_na=args.allow_nan)
                 if args.dry_run:
-                    omero_metadata.populate.log.info(f"Header Types:{header_type}")
+                    omero_metadata.populate.log.info(
+                        f"Header Types:{header_type}")
             else:
-                omero_metadata.populate.log.info("Using user defined header types")
+                omero_metadata.populate.log.info(
+                    "Using user defined header types")
         loops = 0
         ms = 0
         wait = args.wait
