@@ -1,3 +1,8 @@
+0.11.2
+------
+
+* Only perform header detection when --file is specified ([#80](https://github.com/ome/omero-metadata/pull/80))
+
 0.11.1
 ------
 
