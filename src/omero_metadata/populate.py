@@ -1384,7 +1384,7 @@ class ParsingContext(object):
         for column in self.columns:
             columns_by_name[column.name.lower()] = column
             if column.__class__ is PlateColumn:
-                log.warn("PlateColumn is unimplemented")
+                log.debug("PlateColumn is unimplemented")
             elif column.__class__ is WellColumn:
                 well_column = column
             elif column.name == WELL_NAME_COLUMN:
@@ -1531,7 +1531,7 @@ class ParsingContext(object):
                         "%s not found in image names" % iname)
                 image_column.values.append(iid)
             elif target_class is not ImageI:
-                log.info('Missing image name column, skipping.')
+                log.debug('Missing image name column, skipping.')
 
             if plate_name_column is not None:
                 plate = columns_by_name['plate'].values[i]   # FIXME
