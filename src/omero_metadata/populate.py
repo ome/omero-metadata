@@ -1231,6 +1231,9 @@ class ParsingContext(object):
 
     def preprocess_data(self, reader):
         for i, row in enumerate(reader):
+            # For each row in the table,
+            # add a single value to the columns.values
+            # then call post.process() to resolve ID -> name or name -> ID
             row = [(self.columns[i], value) for i, value in enumerate(row)]
             for column, original_value in row:
                 log.debug('Original value %s, %s',
@@ -1315,8 +1318,10 @@ class ParsingContext(object):
                     self.populate_row(row)
                     row_count = row_count + 1
                     if row_count >= batch_size:
+                        # Call post_process() for this batch
                         self.post_process()
                         table.addData(self.columns)
+                        # clear row data ready for next batch
                         for column in self.columns:
                             column.values = []
                         row_count = 0
@@ -1325,6 +1330,7 @@ class ParsingContext(object):
         if row_count != 0:
             log.debug("DATA TO ADD")
             log.debug(self.columns)
+            # Call post_process for final remaining rows (less than batch_size)
             self.post_process()
             table.addData(self.columns)
 
@@ -1357,6 +1363,11 @@ class ParsingContext(object):
                 log.warning('Skip empty row %d', r + 1)
 
     def post_process(self):
+        # post_process is called at 2 points in the populate workflow...
+        # First called during preprocess_data() on each row at a time (when
+        # each column.values list has a single value)
+        # then again during populate_from_reader(), when all rows are processed
+        # in batches.
         target_class = self.target_object.__class__
         columns_by_name = dict()
         well_column = None
@@ -1436,6 +1447,7 @@ class ParsingContext(object):
                     DatasetI is target_class or
                     ProjectI is target_class) and \
                     resolve_image_names and not resolve_image_ids:
+                # PDI - need to know Image Names from Image IDs
                 iname = ""
                 try:
                     log.debug(image_name_column)
