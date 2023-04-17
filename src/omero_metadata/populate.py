@@ -1184,12 +1184,12 @@ class ParsingContext(object):
             self.populate_from_reader(reader,
                                       self.filter_function, table, 1000)
             self.create_file_annotation(table)
+            log.debug('Column widths: %r' % self.get_column_widths())
+            log.debug('Columns: %r' % [
+                (o.name, len(o.values)) for o in self.columns])
+            return table.getOriginalFile().id.val
         finally:
             table.close()
-
-        log.debug('Column widths: %r' % self.get_column_widths())
-        log.debug('Columns: %r' % [
-            (o.name, len(o.values)) for o in self.columns])
 
     def create_table(self):
         sf = self.client.getSession()
