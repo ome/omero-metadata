@@ -1,3 +1,8 @@
+0.12.0
+------
+
+* Return the table ID as the output of `ParsingContext.parse` ([#82](https://github.com/ome/omero-metadata/pull/82))
+
 0.11.2
 ------
 
