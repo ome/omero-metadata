@@ -1204,7 +1204,7 @@ class TestPopulateMetadataHelper(ITest):
                 ctx.parse()
             return
         else:
-            ctx.parse()
+            out = ctx.parse()
 
         # Get file annotations
         anns = fixture.get_annotations()
@@ -1213,6 +1213,7 @@ class TestPopulateMetadataHelper(ITest):
         table_file_ann = anns[0]
         assert unwrap(table_file_ann.getNs()) == NSBULKANNOTATIONS
         fileid = table_file_ann.file.id.val
+        assert fileid == out
 
         # Load file to check name
         query = self.client.sf.getQueryService()
