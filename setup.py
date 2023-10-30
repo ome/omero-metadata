@@ -131,7 +131,5 @@ setup(
         'pandas'
     ],
     python_requires='>=3',
-    tests_require=[
-        'pytest',
-        'mox3'],
+    tests_require=['pytest'],
 )
