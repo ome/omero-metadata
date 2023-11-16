@@ -131,5 +131,7 @@ setup(
         'pandas'
     ],
     python_requires='>=3',
-    tests_require=['pytest'],
+    tests_require=[
+        'omero-py>=5.17.0',
+        'pytest'],
 )
