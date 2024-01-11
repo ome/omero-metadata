@@ -132,6 +132,6 @@ setup(
     ],
     python_requires='>=3',
     tests_require=[
-        'pytest',
-        'mox3'],
+        'omero-py>=5.17.0',
+        'pytest'],
 )
