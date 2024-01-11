@@ -673,7 +673,8 @@ class ScreenWrapper(SPWWrapper):
         self.plates_by_id = dict()
         images_by_id = dict()
         self.images_by_id[self.target_object.id.val] = images_by_id
-        for plate in (l.child for l in self.target_object.copyPlateLinks()):
+        plates = [link.child for link in self.target_object.copyPlateLinks()]
+        for plate in plates:
             parameters = omero.sys.ParametersI()
             parameters.addId(plate.id.val)
             plate = query_service.findByQuery((
