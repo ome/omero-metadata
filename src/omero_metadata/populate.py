@@ -650,7 +650,7 @@ class ScreenWrapper(SPWWrapper):
         try:
             return self.plates_by_name[value].id.val
         except KeyError:
-            log.warn('Screen is missing plate: %s' % value)
+            log.warning('Screen is missing plate: %s' % value)
             return Skip()
 
     def _load(self):
@@ -775,10 +775,10 @@ class DatasetWrapper(PDIWrapper):
         try:
             return self.rois_by_id[int(value)].id.val
         except KeyError:
-            log.warn('Dataset is missing ROI: %s' % value)
+            log.warning('Dataset is missing ROI: %s' % value)
             return -1
         except ValueError:
-            log.warn('Wrong input type for ROI ID: %s' % value)
+            log.warning('Wrong input type for ROI ID: %s' % value)
             return -1
 
     def resolve_shape(self, value):
@@ -788,10 +788,10 @@ class DatasetWrapper(PDIWrapper):
         try:
             return self.shapes_by_id[int(value)].id.val
         except KeyError:
-            log.warn('Dataset is missing Shape: %s' % value)
+            log.warning('Dataset is missing Shape: %s' % value)
             return -1
         except ValueError:
-            log.warn('Wrong input type for Shape ID: %s' % value)
+            log.warning('Wrong input type for Shape ID: %s' % value)
             return -1
 
     def get_image_id_by_name(self, iname, dname=None):
@@ -901,7 +901,7 @@ class ProjectWrapper(PDIWrapper):
             else:
                 return self.datasets_by_name[value].id.val
         except KeyError:
-            log.warn('Project is missing dataset: %s' % value)
+            log.warning('Project is missing dataset: %s' % value)
             return Skip()
 
     def _load(self):
@@ -983,20 +983,20 @@ class ImageWrapper(ValueWrapper):
         try:
             return self.shapes_by_id[int(value)].id.val
         except KeyError:
-            log.warn('Image is missing Shape: %s' % value)
+            log.warning('Image is missing Shape: %s' % value)
             return -1
         except ValueError:
-            log.warn('Wrong input type for Shape ID: %s' % value)
+            log.warning('Wrong input type for Shape ID: %s' % value)
             return -1
 
     def resolve_roi(self, column, row, value):
         try:
             return self.rois_by_id[int(value)].id.val
         except KeyError:
-            log.warn('Image is missing ROI: %s' % value)
+            log.warning('Image is missing ROI: %s' % value)
             return -1
         except ValueError:
-            log.warn('Wrong input type for ROI ID: %s' % value)
+            log.warning('Wrong input type for ROI ID: %s' % value)
             return -1
 
     def _load(self):
@@ -1036,7 +1036,7 @@ class ImageWrapper(ValueWrapper):
             rois_by_id[rid] = roi
             shapes_by_id[shape.id.val] = shape
             if unwrap(roi.name) in rois_by_name.keys():
-                log.warn('Conflicting ROI names.')
+                log.warning('Conflicting ROI names.')
                 self.ambiguous_naming = True
             rois_by_name[unwrap(roi.name)] = roi
         self.rois_by_id = rois_by_id
@@ -1154,7 +1154,7 @@ class ParsingContext(object):
         self.columns = self.header_resolver.create_columns()
         log.debug('Columns: %r' % self.columns)
         if len(self.columns) > MAX_COLUMN_COUNT:
-            log.warn("Column count exceeds max column count")
+            log.warning("Column count exceeds max column count")
 
         self.preprocess_data(reader)
 
@@ -1367,7 +1367,7 @@ class ParsingContext(object):
         for column in self.columns:
             columns_by_name[column.name.lower()] = column
             if column.__class__ is PlateColumn:
-                log.warn("PlateColumn is unimplemented")
+                log.warning("PlateColumn is unimplemented")
             elif column.__class__ is WellColumn:
                 well_column = column
             elif column.name == WELL_NAME_COLUMN:
@@ -1417,7 +1417,7 @@ class ParsingContext(object):
                         plate = columns_by_name["plate"].values[i]
                     v = self.value_resolver.get_well_name(well_id, plate)
                 except KeyError:
-                    log.warn(
+                    log.warning(
                         'Skipping table row %d! Missing well row or column '
                         'for well name population!' % i, exc_info=True
                     )
@@ -1445,7 +1445,7 @@ class ParsingContext(object):
                     iname = self.value_resolver.get_image_name_by_id(
                         iid, did)
                 except KeyError:
-                    log.warn(
+                    log.warning(
                         "%d not found in image ids" % iid)
                 assert i == len(image_name_column.values)
                 image_name_column.values.append(iname)
@@ -1471,7 +1471,7 @@ class ParsingContext(object):
                     iid = self.value_resolver.get_image_id_by_name(
                         iname, did)
                 except KeyError:
-                    log.warn(
+                    log.warning(
                         "%d not found in image ids" % iid)
                 assert i == len(image_column.values)
                 image_column.values.append(iid)
@@ -1510,7 +1510,7 @@ class ParsingContext(object):
                     if rname is None:
                         rname = ""
                 except KeyError:
-                    log.warn(
+                    log.warning(
                         "%d not found in roi ids" % rid)
                 assert i == len(roi_name_column.values)
                 roi_name_column.values.append(rname)
@@ -1527,7 +1527,7 @@ class ParsingContext(object):
                     rname = roi_name_column.values[i]
                     rid = self.value_resolver.get_roi_id_by_name(rname)
                 except KeyError:
-                    log.warn(
+                    log.warning(
                         "%d not found in roi names" % rname)
                 assert i == len(roi_column.values)
                 roi_column.values.append(rid)
@@ -1900,7 +1900,7 @@ class BulkToMapAnnotationContext(_QueryContext):
                     targets.append(obj)
                     targets.extend(self._get_additional_targets(obj))
                 else:
-                    log.warn("Invalid Id:%d found in row %s", row[n], row)
+                    log.warning("Invalid Id:%d found in row %s", row[n], row)
             if targets:
                 for tr in trs:
                     rowkvs = tr.transform(row)
