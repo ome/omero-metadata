@@ -247,6 +247,7 @@ class TestMetadataControl(MetadataTestBase):
 
         # Should be empty since it's deleted
         o = self.invoke(capfd)
+        assert o == ""
         assert len(o.strip()) == 0
 
     @pytest.mark.parametrize('report', [False, True])
