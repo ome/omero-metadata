@@ -225,11 +225,6 @@ class HeaderResolver(object):
     def columns_sanity_check(self, columns):
         column_types = [column.__class__ for column in columns]
         column_names = [column.name for column in columns]
-        if WellColumn in column_types and ImageColumn in column_types:
-            log.debug(column_types)
-            raise MetadataError(
-                ('Well Column and Image Column cannot be resolved at '
-                 'the same time. Pick one.'))
         if RoiColumn in column_types and ROI_NAME_COLUMN in column_names:
             log.debug('Found both ROI names and IDs. Not appending either.')
             return False
@@ -390,8 +385,8 @@ class ValueResolver(object):
         row = self.AS_ALPHA[row]
         return '%s%d' % (row, col + 1)
 
-    def get_image_id_by_name(self, iname, dname=None):
-        return self.wrapper.get_image_id_by_name(iname, dname)
+    def get_image_id_by_name(self, iname, did=None):
+        return self.wrapper.get_image_id_by_name(iname, did)
 
     def get_image_name_by_id(self, iid, pid=None):
         return self.wrapper.get_image_name_by_id(iid, pid)
@@ -574,7 +569,8 @@ class SPWWrapper(ValueWrapper):
             raise Exception("Cannot resolve image to plate")
         return self.images_by_id[pid][iid].name.val
 
-    def parse_plate(self, plate, wells_by_location, wells_by_id, images_by_id):
+    def parse_plate(self, plate, wells_by_location, wells_by_id,
+                    images_by_id, images_by_name):
         """
         Accepts PlateData instances
         """
@@ -594,6 +590,7 @@ class SPWWrapper(ValueWrapper):
             for well_sample in well.well_samples:
                 image = well_sample.image
                 images_by_id[image.id.val] = image
+                images_by_name[image.name.val] = image
         log.debug('Completed parsing plate: %s' % plate.name.val)
         for row in wells_by_location:
             log.debug('%s: %r' % (row, list(wells_by_location[row].keys())))
@@ -638,6 +635,9 @@ class ScreenWrapper(SPWWrapper):
         super(ScreenWrapper, self).__init__(value_resolver)
         self._load()
 
+    def get_image_id_by_name(self, iname, pid=None):
+        return self.images_by_name[pid][iname].id.val
+
     def get_plate_name_by_id(self, plate):
         plate = self.plates_by_id[plate]
         return plate.name.val
@@ -666,6 +666,7 @@ class ScreenWrapper(SPWWrapper):
         if self.target_object is None:
             raise MetadataError('Could not find target object!')
         self.target_name = unwrap(self.target_object.getName())
+        self.images_by_name = dict()
         self.images_by_id = dict()
         self.wells_by_location = dict()
         self.wells_by_id = dict()
@@ -689,8 +690,11 @@ class ScreenWrapper(SPWWrapper):
             wells_by_id = dict()
             self.wells_by_location[plate.name.val] = wells_by_location
             self.wells_by_id[plate.id.val] = wells_by_id
+            images_by_name = dict()
+            self.images_by_name[plate.id.val] = images_by_name
             self.parse_plate(
-                plate, wells_by_location, wells_by_id, images_by_id
+                plate, wells_by_location, wells_by_id,
+                images_by_id, images_by_name
             )
 
 
@@ -704,6 +708,10 @@ class PlateWrapper(SPWWrapper):
         plate = self.target_object.id.val
         wells = self.wells_by_id[plate]
         return wells[well_id]
+
+    def get_image_id_by_name(self, iname, pid=None):
+        plate = self.target_object.id.val
+        return self.images_by_name[plate][iname].id.val
 
     def subselect(self, rows, names):
         """
@@ -742,18 +750,22 @@ class PlateWrapper(SPWWrapper):
         self.images_by_id = dict()
         images_by_id = dict()
 
+        self.images_by_name = dict()
+        images_by_name = dict()
+        self.images_by_name[self.target_object.id.val] = images_by_name
+
         self.wells_by_location[self.target_object.name.val] = wells_by_location
         self.wells_by_id[self.target_object.id.val] = wells_by_id
         self.images_by_id[self.target_object.id.val] = images_by_id
         self.parse_plate(
             PlateData(self.target_object),
-            wells_by_location, wells_by_id, images_by_id
+            wells_by_location, wells_by_id, images_by_id, images_by_name
         )
 
 
 class PDIWrapper(ValueWrapper):
 
-    def get_image_id_by_name(self, iname, dname=None):
+    def get_image_id_by_name(self, iname, did=None):
         raise Exception("to be implemented by subclasses")
 
 
@@ -793,7 +805,7 @@ class DatasetWrapper(PDIWrapper):
             log.warn('Wrong input type for Shape ID: %s' % value)
             return -1
 
-    def get_image_id_by_name(self, iname, dname=None):
+    def get_image_id_by_name(self, iname, did=None):
         return self.images_by_name[iname].id.val
 
     def get_image_name_by_id(self, iid, did):
@@ -887,8 +899,8 @@ class ProjectWrapper(PDIWrapper):
         self.datasets_by_name = dict()
         self._load()
 
-    def get_image_id_by_name(self, iname, dname=None):
-        return self.images_by_name[dname][iname].id.val
+    def get_image_id_by_name(self, iname, did=None):
+        return self.images_by_name[did][iname].id.val
 
     def get_image_name_by_id(self, iid, did=None):
         return self.images_by_id[did][iid].name.val
@@ -1218,12 +1230,10 @@ class ParsingContext(object):
                     return self.parse_from_handle_stream(f2)
 
     def preprocess_data(self, reader):
-        # Get count of data columns - e.g. NOT Well Name
-        column_count = 0
-        for column in self.columns:
-            if column.name not in ADDED_COLUMN_NAMES:
-                column_count += 1
         for i, row in enumerate(reader):
+            # For each row in the table,
+            # add a single value to the columns.values
+            # then call post.process() to resolve ID -> name or name -> ID
             row = [(self.columns[i], value) for i, value in enumerate(row)]
             for column, original_value in row:
                 log.debug('Original value %s, %s',
@@ -1308,8 +1318,10 @@ class ParsingContext(object):
                     self.populate_row(row)
                     row_count = row_count + 1
                     if row_count >= batch_size:
+                        # Call post_process() for this batch
                         self.post_process()
                         table.addData(self.columns)
+                        # clear row data ready for next batch
                         for column in self.columns:
                             column.values = []
                         row_count = 0
@@ -1318,6 +1330,7 @@ class ParsingContext(object):
         if row_count != 0:
             log.debug("DATA TO ADD")
             log.debug(self.columns)
+            # Call post_process for final remaining rows (less than batch_size)
             self.post_process()
             table.addData(self.columns)
 
@@ -1350,6 +1363,11 @@ class ParsingContext(object):
                 log.warning('Skip empty row %d', r + 1)
 
     def post_process(self):
+        # post_process is called at 2 points in the populate workflow...
+        # First called during preprocess_data() on each row at a time (when
+        # each column.values list has a single value)
+        # then again during populate_from_reader(), when all rows are processed
+        # in batches.
         target_class = self.target_object.__class__
         columns_by_name = dict()
         well_column = None
@@ -1366,7 +1384,7 @@ class ParsingContext(object):
         for column in self.columns:
             columns_by_name[column.name.lower()] = column
             if column.__class__ is PlateColumn:
-                log.warn("PlateColumn is unimplemented")
+                log.debug("PlateColumn is unimplemented")
             elif column.__class__ is WellColumn:
                 well_column = column
             elif column.name == WELL_NAME_COLUMN:
@@ -1429,6 +1447,7 @@ class ParsingContext(object):
                     DatasetI is target_class or
                     ProjectI is target_class) and \
                     resolve_image_names and not resolve_image_ids:
+                # PDI - need to know Image Names from Image IDs
                 iname = ""
                 try:
                     log.debug(image_name_column)
@@ -1454,6 +1473,7 @@ class ParsingContext(object):
                     DatasetI is target_class or
                     ProjectI is target_class) and \
                     resolve_image_ids and not resolve_image_names:
+                # PDI - need to know Image IDs from Names
                 iid = -1
                 try:
                     log.debug(image_column)
@@ -1471,12 +1491,14 @@ class ParsingContext(object):
                         iname, did)
                 except KeyError:
                     log.warn(
-                        "%d not found in image ids" % iid)
+                        "%s not found in image names" % iname)
                 assert i == len(image_column.values)
                 image_column.values.append(iid)
             elif image_name_column is not None and (
                     ScreenI is target_class or
-                    PlateI is target_class):
+                    PlateI is target_class) and \
+                    resolve_image_names and not resolve_image_ids:
+                # HCS - we need to know image Names from IDs
                 iid = image_column.values[i]
                 log.info("Checking image %s", iid)
                 pid = None
@@ -1487,8 +1509,29 @@ class ParsingContext(object):
                 image_name_column.size = max(
                     image_name_column.size, len(iname)
                 )
+            elif image_name_column is not None and (
+                    ScreenI is target_class or
+                    PlateI is target_class) and \
+                    resolve_image_ids and not resolve_image_names:
+                # HCS - we need to know image IDs from Names
+                log.debug(image_column)
+                iname = image_name_column.values[i]
+                iid = -1
+                try:
+                    # If target class is Screen, a plate column should exist
+                    if "plate" in columns_by_name:
+                        pid = int(columns_by_name["plate"].values[i])
+                    elif target_class is PlateI:
+                        pid = self.target_object.id.val
+                    log.debug("Using Plate:%d" % pid)
+                    iid = self.value_resolver.get_image_id_by_name(
+                        iname, pid)
+                except KeyError:
+                    log.warn(
+                        "%s not found in image names" % iname)
+                image_column.values.append(iid)
             elif target_class is not ImageI:
-                log.info('Missing image name column, skipping.')
+                log.debug('Missing image name column, skipping.')
 
             if plate_name_column is not None:
                 plate = columns_by_name['plate'].values[i]   # FIXME
