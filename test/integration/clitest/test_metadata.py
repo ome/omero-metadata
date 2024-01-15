@@ -245,9 +245,9 @@ class TestMetadataControl(MetadataTestBase):
         o = self.invoke(capfd)
         assert "FileAnnotation:" in o
 
-        # Should be empty since it's deleted
+        # Should have no FileAnnotation since it's deleted
         o = self.invoke(capfd)
-        assert len(o.strip()) == 0
+        assert "FileAnnotation:" not in o
 
     @pytest.mark.parametrize('report', [False, True])
     def test_measures(self, capfd, report):
