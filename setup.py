@@ -124,7 +124,6 @@ setup(
     keywords=['OMERO.CLI', 'plugin'],
     cmdclass={'test': PyTest},
     install_requires=[
-        'future',
         'omero-py>=5.6.0',
         'PyYAML',
         'jinja2',
