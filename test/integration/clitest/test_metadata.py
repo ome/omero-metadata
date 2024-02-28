@@ -20,7 +20,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-from past.builtins import long
 
 import omero
 import omero.gateway
@@ -43,7 +42,7 @@ class MetadataTestBase(CLITest):
 
         conn = BlitzGateway(client_obj=self.client)
         self.imageid = unwrap(self.image.getId())
-        assert isinstance(self.imageid, long)
+        assert isinstance(self.imageid, int)
         wrapper = conn.getObject("Image", self.imageid)
         self.md = Metadata(wrapper)
 
@@ -245,9 +244,10 @@ class TestMetadataControl(MetadataTestBase):
         o = self.invoke(capfd)
         assert "FileAnnotation:" in o
 
-        # Should have no FileAnnotation since it's deleted
+        # Should be empty since it's deleted
         o = self.invoke(capfd)
-        assert "FileAnnotation:" not in o
+        assert o == ""
+        assert len(o.strip()) == 0
 
     @pytest.mark.parametrize('report', [False, True])
     def test_measures(self, capfd, report):
