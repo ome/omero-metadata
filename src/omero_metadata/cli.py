@@ -21,6 +21,7 @@ from omero.cli import ProxyStringType
 from omero.constants import namespaces
 from omero.gateway import BlitzGateway
 import omero_metadata.populate
+from omero_metadata.populate import DEFAULT_TABLE_NAME
 from omero.util import populate_roi, pydict_text_io
 from omero.util.metadata_utils import NSBULKANNOTATIONSCONFIG
 from omero.util.metadata_utils import NSBULKANNOTATIONSRAW
@@ -244,10 +245,14 @@ class MetadataControl(BaseControl):
             "--manual-header", "--manual_header", action="store_true", help=(
                 "Disable automatic header detection during population"))
 
+        populate.add_argument(
+            "--table-name", "--table_name", default=DEFAULT_TABLE_NAME,
+            help=(f"Name of the table (default: {DEFAULT_TABLE_NAME})")
+        )
+
         populateroi.add_argument(
             "--measurement", type=int, default=None,
             help="Index of the measurement to populate. By default, all")
-
         pixelsize.add_argument(
             "--x", type=float, default=None, help="Physical pixel size X")
         pixelsize.add_argument(
@@ -595,7 +600,8 @@ class MetadataControl(BaseControl):
                             cfg=args.cfg, cfgid=cfgid, attach=args.attach,
                             options=localcfg, batch_size=args.batch,
                             loops=loops, ms=ms, dry_run=args.dry_run,
-                            allow_nan=args.allow_nan, column_types=header_type)
+                            allow_nan=args.allow_nan, column_types=header_type,
+                            table_name=args.table_name)
         ctx.parse()
 
     def rois(self, args):
