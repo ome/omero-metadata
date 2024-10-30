@@ -1,3 +1,11 @@
+0.13.0
+------
+
+* Add tablename option ([#86](https://github.com/ome/omero-metadata/pull/86))
+* Integration tests: call pytest directly ([#85](https://github.com/ome/omero-metadata/pull/85))
+* Fix flake8 issue raised following the Rocky Linux 9 image upgrade ([#84](https://github.com/ome/omero-metadata/pull/84))
+* Remove mox3 test dependency ([#83](https://github.com/ome/omero-metadata/pull/83))
+
 0.12.0
 ------
 
