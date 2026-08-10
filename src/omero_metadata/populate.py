@@ -302,7 +302,7 @@ class HeaderResolver(object):
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure ImageColumn is named "Image"
                 column.name = "Image"
-            if column.__class__ is RoiColumn and target_class != DatasetI:
+            if column.__class__ is RoiColumn and target_class != DatasetI and target_class != ProjectI:
                 append.append(StringColumn(ROI_NAME_COLUMN, '',
                               self.DEFAULT_COLUMN_SIZE, list()))
                 # Ensure RoiColumn is named 'Roi'
@@ -879,6 +879,8 @@ class ProjectWrapper(PDIWrapper):
         self.images_by_name = defaultdict(lambda: dict())
         self.datasets_by_id = dict()
         self.datasets_by_name = dict()
+        self.rois_by_id = None
+        self.shapes_by_id = None
         self._load()
 
     def get_image_id_by_name(self, iname, dname=None):
@@ -886,6 +888,57 @@ class ProjectWrapper(PDIWrapper):
 
     def get_image_name_by_id(self, iid, did=None):
         return self.images_by_id[did][iid].name.val
+
+    def resolve_roi(self, column, row, value):
+        # Support Project table with known ROI IDs
+        if self.rois_by_id is None:
+            self._load_rois()
+        try:
+            return self.rois_by_id[int(value)].id.val
+        except KeyError:
+            log.warning('Project is missing ROI: %s' % value)
+            return -1
+        except ValueError:
+            log.warning('Wrong input type for ROI ID: %s' % value)
+            return -1
+
+    def _load_rois(self):
+        log.debug('Loading ROIs in Project:%d' % self.target_object.id.val)
+        self.rois_by_id = {}
+        self.shapes_by_id = {}
+        query_service = self.client.getSession().getQueryService()
+        parameters = omero.sys.ParametersI()
+        parameters.addId(self.target_object.id.val)
+        data = list()
+        while True:
+            parameters.page(len(data), 1000)
+            rv = unwrap(query_service.projection((
+                'select distinct i, r, s '
+                'from Shape s '
+                'join s.roi as r '
+                'join r.image as i '
+                'join i.datasetLinks as dil '
+                'join dil.parent as d '
+                'join d.projectLinks as pdl '
+                'join pdl.parent as p '
+                'where p.id = :id order by s.id desc'),
+                parameters, {'omero.group': '-1'}))
+            if len(rv) == 0:
+                break
+            else:
+                data.extend(rv)
+        if not data:
+            raise MetadataError("No ROIs on images in target Project")
+
+        for image, roi, shape in data:
+            # we only care about *IDs* of ROIs and Shapes in the Dataset
+            rid = roi.id.val
+            sid = shape.id.val
+            self.rois_by_id[rid] = roi
+            self.shapes_by_id[sid] = shape
+
+        log.debug('Completed loading ROIs and Shapes in Project: %s'
+                  % self.target_object.id.val)
 
     def resolve_dataset(self, column, row, value):
         try:
